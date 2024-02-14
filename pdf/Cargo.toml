@@ -10,3 +10,4 @@ calamine = "0.24.0"
 chrono = "0.4.33"
 clap = { version = "4.0", features = ["derive"] }
 printpdf = "0.7.0"
+termcolor = "1.4.1"

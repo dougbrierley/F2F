@@ -1,3 +1,6 @@
 /target
 **/*.xlsx
 **/*.pdf
+**/*.DS_Store
+
+!example.pdf
