@@ -1,0 +1,11 @@
+service: serverless-s3
+provider:
+  name: aws
+  deploymentMethod: direct
+  region: eu-west-2
+  stage: dev
+
+
+resources:
+  # S3
+  - ${file(resources/s3-bucket.yml)}

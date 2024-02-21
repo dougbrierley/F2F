@@ -9,3 +9,12 @@
   - Sandy Lane - Carrots 10kg x £2.10. = £21.00
 - IDEALLY     a monthly summary by College & by Producer 
 - OR.    a weekly summary by College & by Producer
+
+
+# Development
+
+## Resource and Lambda Functions
+
+```
+sls deploy
+```
