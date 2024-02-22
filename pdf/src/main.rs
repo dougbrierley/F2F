@@ -2,7 +2,7 @@ use calamine::{
     open_workbook, Data, DataType, Error, Range, RangeDeserializerBuilder, Reader, Xlsx,
 };
 use chrono::prelude::*;
-use clap::Parser;
+use clap::{Parser, Args, Subcommand};
 use printpdf::*;
 use std::fs::File;
 use std::io::BufWriter;
@@ -530,18 +530,47 @@ fn example(path: std::path::PathBuf) -> Result<(), Error> {
 }
 
 #[derive(Parser)]
+#[command(version, about, long_about = None)]
+#[command(propagate_version = true)]
 struct Cli {
-    /// File that you want to read
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// Generates orders from given file
+    Order(OrderArgs),
+    /// Generates invoice for given month
+    Invoice(InvoiceArgs),
+}
+
+#[derive(Args)]
+struct OrderArgs {
+    /// File that you want to generate orders from
     file: std::path::PathBuf,
 }
 
+#[derive(Args)]
+struct InvoiceArgs {
+    /// Week formatted as YYYY-MM
+    month: Option<String>,
+}
+
+
 fn main() {
-    let args = Cli::parse();
+    let cli = Cli::parse();
 
-    println!("path: {:?}", args.file);
+    match &cli.command {
+        Commands::Order(path) => {
+            match example(path.file.clone()) {
+                Ok(_) => println!("Success"),
+                Err(e) => println!("Error: {}", e),
+            }
 
-    match example(args.file) {
-        Ok(_) => println!("Success"),
-        Err(e) => println!("Error: {}", e),
+        },
+        Commands::Invoice(month) => {
+            println!("Invoice: {:?}", month.month);
+        }
     }
 }
