@@ -9,3 +9,9 @@ provider:
 resources:
   # S3
   - ${file(resources/s3-bucket.yml)}
+
+functions:
+  - ${file(./python-functions.yml)}
+
+plugins:
+  - serverless-python-requirements
