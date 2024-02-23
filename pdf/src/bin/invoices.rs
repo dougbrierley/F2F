@@ -13,7 +13,8 @@ async fn main() -> Result<(), Error> {
     lambda_runtime::run(func).await
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+
+#[derive(Deserialize, Serialize, Debug)]
 struct Incoming {
     name: String,
     toppings: String,

@@ -5,6 +5,7 @@ use termcolor::{ColorChoice, ColorSpec, StandardStream, WriteColor};
 use std::fs::File;
 use std::io::BufWriter;
 use std::io::Write;
+use serde::{Deserialize, Serialize};
 
 use crate::pdf::add_hr;
 use crate::utils::{format_currency, headers};
@@ -18,13 +19,15 @@ struct BuyerDetails {
     country: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 /// An order for a buyer along with a hashmap of produce and order lines.
 pub struct Order {
     buyer: String,
     lines: std::collections::HashMap<String, Vec<OrderLine>>,
 } 
-#[derive(Debug)]
+
+#[derive(Debug, Deserialize, Serialize)]
+/// An order for a buyer along with a hashmap of produce and order lines.
 pub struct OrderLine {
     produce: String,
     variant: String,
@@ -373,7 +376,7 @@ fn get_buyers(headers: &Vec<String>) -> (Vec<Buyer>, usize) {
     )
 }
 
-fn create_buyer_orders(orders: Vec<&Order>) {
+pub fn create_buyer_orders(orders: Vec<&Order>) {
     for order in orders {
         create_buyer_order(order)
     }
