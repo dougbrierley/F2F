@@ -1,5 +1,7 @@
+[workspace]
+
 [package]
-name = "ftf"
+name = "f2f"
 version = "0.1.0"
 edition = "2021"
 
@@ -9,6 +11,28 @@ edition = "2021"
 calamine = "0.24.0"
 chrono = "0.4.33"
 clap = { version = "4.0", features = ["derive"] }
+lambda_runtime = "0.9.2"
 printpdf = "0.7.0"
 regex = "1.10.3"
 termcolor = "1.4.1"
+tokio = "1.36.0"
+aws-config = { version= "1.1.6", features = ["behavior-version-latest"] }
+
+#tracing
+tracing = "0.1.40"
+tracing-subscriber = "0.3.17"
+serde_json = "1.0.114"
+serde = "1.0.197"
+
+[lib]
+name="f2f"
+path="src/lib/lib.rs"
+
+[[bin]]
+name="create_orders"
+path="src/bin/orders.rs"
+
+[[bin]]
+name="create_invoices"
+path="src/bin/invoices.rs"
+
