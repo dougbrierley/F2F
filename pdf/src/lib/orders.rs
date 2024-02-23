@@ -9,7 +9,17 @@ use std::io::Write;
 use crate::pdf::add_hr;
 use crate::utils::{format_currency, headers};
 
+struct BuyerDetails {
+    name: String,
+    address1: String,
+    address2: Option<String>,
+    city: String,
+    postcode: String,
+    country: String,
+}
+
 #[derive(Debug)]
+/// An order for a buyer along with a hashmap of produce and order lines.
 pub struct Order {
     buyer: String,
     lines: std::collections::HashMap<String, Vec<OrderLine>>,
@@ -153,14 +163,7 @@ pub fn create_buyer_order(order: &Order) {
 
     current_layer.end_text_section();
 
-    struct BuyerDetails {
-        name: String,
-        address1: String,
-        address2: Option<String>,
-        city: String,
-        postcode: String,
-        country: String,
-    }
+
 
     let buyer_details = BuyerDetails {
         name: order.buyer.clone(),

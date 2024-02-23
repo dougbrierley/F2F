@@ -15,7 +15,14 @@ lambda_runtime = "0.9.2"
 printpdf = "0.7.0"
 regex = "1.10.3"
 termcolor = "1.4.1"
+tokio = "1.36.0"
+aws-config = { version= "1.1.6", features = ["behavior-version-latest"] }
 
+#tracing
+tracing = "0.1.40"
+tracing-subscriber = "0.3.17"
+serde_json = "1.0.114"
+serde = "1.0.197"
 
 [lib]
 name="f2f"
