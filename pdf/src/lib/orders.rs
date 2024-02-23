@@ -1,5 +1,3 @@
-use crate::pdf::add_hr;
-use crate::utils::{format_currency, headers};
 use calamine::{open_workbook, Data, DataType, Error, RangeDeserializerBuilder, Reader, Xlsx};
 use chrono::prelude::*;
 use printpdf::{Color, IndirectFontRef, Mm, PdfDocument, PdfLayerReference, Rgb};
@@ -8,11 +6,14 @@ use std::fs::File;
 use std::io::BufWriter;
 use std::io::Write;
 
+use crate::pdf::add_hr;
+use crate::utils::{format_currency, headers};
+
 #[derive(Debug)]
 pub struct Order {
     buyer: String,
     lines: std::collections::HashMap<String, Vec<OrderLine>>,
-}
+} 
 #[derive(Debug)]
 pub struct OrderLine {
     produce: String,

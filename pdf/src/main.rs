@@ -1,5 +1,6 @@
 use clap::{Args, Parser, Subcommand};
-use ftf::{invoices::start_invoices, orders::create_orders};
+use f2f::{invoices::start_invoices, orders::create_orders};
+
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 #[command(propagate_version = true)]
