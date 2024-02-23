@@ -8,7 +8,7 @@
       "name": "aws",
       "deploymentMethod": "direct",
       "region": "eu-west-2",
-      "stage": "prod",
+      "stage": "dev",
       "versionFunctions": true,
       "compiledCloudFormationTemplate": {
         "AWSTemplateFormatVersion": "2010-09-09",
@@ -83,6 +83,125 @@
               }
             }
           },
+          "GetBibleDataLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/serverless-s3-dev-getBibleData"
+            }
+          },
+          "IamRoleLambdaExecution": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+              "AssumeRolePolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Principal": {
+                      "Service": [
+                        "lambda.amazonaws.com"
+                      ]
+                    },
+                    "Action": [
+                      "sts:AssumeRole"
+                    ]
+                  }
+                ]
+              },
+              "Policies": [
+                {
+                  "PolicyName": {
+                    "Fn::Join": [
+                      "-",
+                      [
+                        "serverless-s3",
+                        "dev",
+                        "lambda"
+                      ]
+                    ]
+                  },
+                  "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "logs:CreateLogStream",
+                          "logs:CreateLogGroup",
+                          "logs:TagResource"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/serverless-s3-dev*:*"
+                          }
+                        ]
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "logs:PutLogEvents"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/serverless-s3-dev*:*:*"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ],
+              "Path": "/",
+              "RoleName": {
+                "Fn::Join": [
+                  "-",
+                  [
+                    "serverless-s3",
+                    "dev",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    "lambdaRole"
+                  ]
+                ]
+              }
+            }
+          },
+          "GetBibleDataLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": {
+                  "Ref": "ServerlessDeploymentBucket"
+                },
+                "S3Key": "serverless/serverless-s3/dev/1708687491559-2024-02-23T11:24:51.559Z/serverless-s3.zip"
+              },
+              "Handler": "functions/invoice_contacts_data_loader.handler",
+              "Runtime": "python3.11",
+              "FunctionName": "serverless-s3-dev-getBibleData",
+              "MemorySize": 1024,
+              "Timeout": 6,
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "GetBibleDataLogGroup"
+            ]
+          },
+          "GetBibleDataLambdaVersionvejPScmYQx7A12WW7R0RmAUwOE2Yp2oWjlzhoB0zc": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "GetBibleDataLambdaFunction"
+              },
+              "CodeSha256": "0aEOBqpgcQjanae9PBFbeKgN3FRIY68WcwyD27IcVGY="
+            }
+          },
           "ftfBucket": {
             "Type": "AWS::S3::Bucket",
             "Properties": {
@@ -115,7 +234,16 @@
               "Ref": "ServerlessDeploymentBucket"
             },
             "Export": {
-              "Name": "sls-serverless-s3-prod-ServerlessDeploymentBucketName"
+              "Name": "sls-serverless-s3-dev-ServerlessDeploymentBucketName"
+            }
+          },
+          "GetBibleDataLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "GetBibleDataLambdaVersionvejPScmYQx7A12WW7R0RmAUwOE2Yp2oWjlzhoB0zc"
+            },
+            "Export": {
+              "Name": "sls-serverless-s3-dev-GetBibleDataLambdaFunctionQualifiedArn"
             }
           },
           "ftfBucketName": {
@@ -206,10 +334,26 @@
             }
           }
         }
+      },
+      "vpc": {}
+    },
+    "plugins": [
+      "serverless-python-requirements"
+    ],
+    "pluginsData": {},
+    "functions": {
+      "getBibleData": {
+        "runtime": "python3.11",
+        "handler": "functions/invoice_contacts_data_loader.handler",
+        "events": [],
+        "name": "serverless-s3-dev-getBibleData",
+        "package": {},
+        "memory": 1024,
+        "timeout": 6,
+        "vpc": {},
+        "versionLogicalId": "GetBibleDataLambdaVersionvejPScmYQx7A12WW7R0RmAUwOE2Yp2oWjlzhoB0zc"
       }
     },
-    "pluginsData": {},
-    "functions": {},
     "resources": {
       "Resources": {
         "ftfBucket": {
@@ -255,13 +399,20 @@
       },
       "resources": {
         "$ref": "$[\"service\"][\"resources\"]"
+      },
+      "functions": {
+        "$ref": "$[\"service\"][\"functions\"]"
+      },
+      "plugins": {
+        "$ref": "$[\"service\"][\"plugins\"]"
       }
     },
     "layers": {},
-    "isDashboardMonitoringPreconfigured": false
+    "isDashboardMonitoringPreconfigured": false,
+    "artifact": "/Users/douglasbrierley/Code/F2F/.serverless/serverless-s3.zip"
   },
   "package": {
-    "artifactDirectoryName": "serverless/serverless-s3/prod/1708463783323-2024-02-20T21:16:23.323Z",
-    "artifact": ""
+    "artifactDirectoryName": "serverless/serverless-s3/dev/1708687491559-2024-02-23T11:24:51.559Z",
+    "artifact": "serverless-s3.zip"
   }
 }
