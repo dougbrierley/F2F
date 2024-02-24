@@ -2,3 +2,4 @@
 /.vscode
 **/.serverless
 **/node_modules
+.venv
