@@ -1,7 +1,7 @@
 use std::fs;
 use regex::Regex;
 
-pub fn start_invoices(path: std::path::PathBuf, month: &str) {
+pub fn read_invoice_files(path: std::path::PathBuf, month: &str) {
   let mut files = Vec::<std::path::PathBuf>::new();
 
   let dir = match fs::read_dir(path) {

@@ -1,5 +1,5 @@
 use clap::{Args, Parser, Subcommand};
-use f2f::{invoices::start_invoices, orders::create_orders};
+use f2f::{invoices::read_invoice_files, orders::create_orders};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -65,7 +65,7 @@ fn main() {
                 }
                 None => std::env::current_dir().unwrap(),
             };
-            start_invoices(path, &month);
+            read_invoice_files(path, &month);
         }
     }
 }

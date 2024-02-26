@@ -47,3 +47,13 @@ This project also includes a command line tool that can be used to generate PDFs
 ```sh
 cargo run --bin f2f -- --help
 ```
+
+### Install on machine
+
+To install the command line tool locally, run:
+
+```sh
+cargo install --path .
+```
+
+where `path` is the path to the project directory (`ftf/pdf`).
