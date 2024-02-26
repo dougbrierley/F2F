@@ -1,4 +1,48 @@
 {
-  "name": "name of the invoice",
-  "toppings": "this is it"
+  "invoices": [
+    {
+      "date": "2024-02-28",
+      "due_date": "2024-03-14",
+      "number": "VCC1812",
+      "reference": "Farm2Fork January",
+      "buyer": {
+        "name": "Big Man",
+        "address1": "1234 Main St",
+        "address2": "Apt 123",
+        "city": "Springfield",
+        "postcode": "62701",
+        "country": "USA"
+      },
+      "lines": [
+        {
+          "item": "Carrots",
+          "price": 199,
+          "qty": 2.5,
+          "vat_rate": 0.2,
+          "date": "07/02"
+        },
+        {
+          "item": "Carrots 2",
+          "price": 299,
+          "qty": 1.0,
+          "vat_rate": 0.2,
+          "date": "16/02"
+        },
+        {
+          "item": "Carrots",
+          "price": 399,
+          "qty": 1.0,
+          "vat_rate": 0,
+          "date": "16/02"
+        },
+        {
+          "item": "Delivery Fee",
+          "price": 800,
+          "qty": 3.0,
+          "vat_rate": 0.2,
+          "date": "23/02"
+        }
+      ]
+    }
+  ]
 }

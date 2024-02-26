@@ -1,5 +1,7 @@
+use f2f::invoices::{create_invoices_s3, Invoice};
 use lambda_runtime::{service_fn, Error, LambdaEvent};
 use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -13,15 +15,22 @@ async fn main() -> Result<(), Error> {
     lambda_runtime::run(func).await
 }
 
-
 #[derive(Deserialize, Serialize, Debug)]
 struct Incoming {
-    name: String,
-    toppings: String,
+    invoices: Vec<Invoice>,
 }
 
-async fn func(event: LambdaEvent<Incoming>) -> Result<(), Error> {
-    let i: Incoming = event.payload;
-    tracing::info!("Hello, {}! Your toppings are: {:?}", i.name, i.toppings);
-    Ok(())
+async fn func(event: LambdaEvent<Incoming>) -> Result<Value, Error> {
+    let i: Vec<Invoice> = event.payload.invoices;
+    tracing::info!("Received, {:?}", i);
+    let refs: Vec<&Invoice> = i.iter().map(|s| s).collect();
+
+    let links = match create_invoices_s3(refs).await {
+        Ok(l) => l,
+        Err(e) => {
+            tracing::error!("Error: {}", e);
+            panic!("Error: {}", e)
+        }
+    };
+    Ok(json!({ "message": format!("Generated {} new invoices.", links.len()), "links": links }))
 }
