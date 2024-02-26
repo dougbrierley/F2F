@@ -57,3 +57,10 @@ pub async fn upload_object(
       .send()
       .await
 }
+
+pub fn vat_rate_string(vat_rate: f32) -> String {
+  if vat_rate == 0.0 {
+      return "No VAT".to_string();
+  }
+  format!("{}%", vat_rate * 100.0)
+}

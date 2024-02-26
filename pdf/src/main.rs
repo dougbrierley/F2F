@@ -1,5 +1,5 @@
 use clap::{Args, Parser, Subcommand};
-use f2f::{invoices::read_invoice_files, orders::create_orders};
+use f2f::{invoices::{create_invoices, read_invoice_files, Invoice}, orders::create_orders};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -15,6 +15,8 @@ enum Commands {
     Order(OrderArgs),
     /// Generates invoice for given month
     Invoice(InvoiceArgs),
+    /// Generates invoices from json file
+    InvoiceDev(InvoiceDevArgs),
 }
 
 #[derive(Args)]
@@ -27,6 +29,12 @@ struct OrderArgs {
 pub struct InvoiceArgs {
     /// Week formatted as MM_YYYY
     month: Option<String>,
+    path: Option<std::path::PathBuf>,
+}
+
+#[derive(Args)]
+pub struct InvoiceDevArgs {
+    /// Week formatted as MM_YYYY
     path: Option<std::path::PathBuf>,
 }
 
@@ -66,6 +74,16 @@ fn main() {
                 None => std::env::current_dir().unwrap(),
             };
             read_invoice_files(path, &month);
+        }
+        Commands::InvoiceDev(args) => {
+            let path = match args.path.clone() {
+                Some(p) => p,
+                None => panic!("No file provided"),
+            };
+
+            let invoices = Invoice::many_from_file(path.as_path());
+
+            create_invoices(invoices.iter().collect())
         }
     }
 }

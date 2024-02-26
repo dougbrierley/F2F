@@ -7,7 +7,7 @@
       "reference": "Farm2Fork January",
       "buyer": {
         "name": "Big Man",
-        "address1": "1234 Main St, Springfield, IL 62701",
+        "address1": "1234 Main St",
         "address2": "Apt 123",
         "city": "Springfield",
         "postcode": "62701",
@@ -16,7 +16,6 @@
       "lines": [
         {
           "item": "Carrots",
-          "unit": "lb",
           "price": 199,
           "qty": 2.0,
           "vat_rate": 0.2,
@@ -24,7 +23,6 @@
         },
         {
           "item": "Carrots 2",
-          "unit": "lb",
           "price": 299,
           "qty": 1.0,
           "vat_rate": 0.2,
@@ -32,7 +30,6 @@
         },
         {
           "item": "Carrots",
-          "unit": "lb",
           "price": 399,
           "qty": 1.0,
           "vat_rate": 0,
@@ -40,7 +37,6 @@
         },
         {
           "item": "Delivery Fee",
-          "unit": "single",
           "price": 800,
           "qty": 3.0,
           "vat_rate": 0.2,
