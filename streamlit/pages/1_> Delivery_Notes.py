@@ -1,10 +1,9 @@
 import streamlit as st
 import pandas as pd
-import io
-import base64
+import boto3
+import json
 
 st.set_page_config(page_title="Delivery Notes Generator")
-
 
 hide_streamlit_style = """
             <style>
@@ -23,56 +22,89 @@ contacts = st.file_uploader("Choose Contacts CSV", type="xlsx", accept_multiple_
 dataframes = []
 
 if order_sheet and contacts:
-    orders = pd.read_excel(order_sheet)
-    
+    orders = pd.read_excel(order_sheet, header=2)
+    contacts = pd.read_excel(contacts)
 
-    # if len(dataframes) > 1:
-    #     merge = st.checkbox("Merge uploaded CSV files")
+    # Remove rows with no produce name (i.e. nothing listed)
+    orders = orders.dropna(subset=["Produce Name"])
+    # Remove rows where the sum of columns 9 onwards (the buyers area) is equal to 0
+    orders = orders.loc[(orders.iloc[:, 9:].sum(axis=1) != 0)]
+    # Get the names of the buyers that made orders this week
+    buyers = orders.columns[9:][orders.iloc[:, 9:].sum() > 0].tolist()
 
-    #     if merge:
-    #         # Merge options
-    #         keep_first_header_only = st.selectbox("Keep only the header (first row) of the first file", ["Yes", "No"])
-    #         remove_duplicate_rows = st.selectbox("Remove duplicate rows", ["No", "Yes"])
-    #         remove_empty_rows = st.selectbox("Remove empty rows", ["Yes", "No"])
-    #         end_line = st.selectbox("End line", ["\\n", "\\r\\n"])
+    if not buyers:
+        print("No buyers this week")
 
-    #         try:
-    #             if keep_first_header_only == "Yes":
-    #                 for i, df in enumerate(dataframes[1:]):
-    #                     df.columns = dataframes[0].columns.intersection(df.columns)
-    #                     dataframes[i+1] = df
+    invoice_data = {
+        "orders": []
+    }
 
-    #             merged_df = pd.concat(dataframes, ignore_index=True, join='outer')
+    # Rename the columns to match the notes format
+    contacts = contacts.rename(columns={
+        'Buyer': 'name', 
+        'Address Line 1': 'address1',
+        'Address Line 2': 'adress2', 
+        'City': 'city',
+        'Postcode': 'postcode',
+        'City': 'city', 
+        'Country': 'country'
+        })
 
-    #             if remove_duplicate_rows == "Yes":
-    #                 merged_df.drop_duplicates(inplace=True)
+    contacts = contacts.fillna("")
 
-    #             if remove_empty_rows == "Yes":
-    #                 merged_df.dropna(how="all", inplace=True)
+    for buyer in buyers:
+        # Save the rows that are non-zero for the current buyer
+        non_zero_rows = orders.loc[orders[buyer] != 0].reset_index(drop=True)
 
-    #             dataframes = [merged_df]
+        # Get the unique sellers for the produce that the buyer has ordered
+        sellers = non_zero_rows["Growers"].unique()
 
-    #         except ValueError as e:
-    #             st.error("Please make sure columns match in all files. If you don't want them to match, select 'No' in the first option.")
-    #             st.stop()
+        lines = dict.fromkeys(sellers, [])
+        
+        for index, row in non_zero_rows.iterrows():
+            if row[buyer] == 0:
+                continue
+            lines[row["Growers"]].append({
+                "produce": row["Produce Name"],
+                "variant": row["Additional Info"],
+                "unit": row["UNIT"],
+                "price": row["Price/   UNIT (£)"],
+                "qty": row[buyer]})
 
-    # # Show or hide DataFrames
-    # show_dataframes = st.checkbox("Show DataFrames", value=True)
 
-    # if show_dataframes:
-    #     for i, df in enumerate(dataframes):
-    #         st.write(f"DataFrame {i + 1}")
-    #         st.dataframe(df)
+        buyer_info = contacts[contacts["name"] == buyer]
+        buyer_info = buyer_info.to_dict(orient="records")
 
-    # if st.button("Download cleaned data"):
-    #     for i, df in enumerate(dataframes):
-    #         csv = df.to_csv(index=False)
-    #         b64 = base64.b64encode(csv.encode()).decode()
-    #         href = f'<a href="data:file/csv;base64,{b64}" download="cleaned_data_{i + 1}.csv">Download cleaned_data_{i + 1}.csv</a>'
-    #         st.markdown(href, unsafe_allow_html=True)
+        order = {
+            "buyer": buyer_info,
+            "lines": lines
+        }
+
+        invoice_data["orders"].append(order)
+
+    invoice_data_json = json.dumps(invoice_data)
+
+    Lambda = boto3.client('lambda', region_name="eu-west-2")
+    response = Lambda.invoke(
+        FunctionName='arn:aws:lambda:eu-west-2:850434255294:function:create_orders',
+        InvocationType='RequestResponse',
+        LogType='Tail',
+        # ClientContext='str_jsoning',
+        Payload=invoice_data,
+        # Qualifier='string'
+    )
+    print(response)
+
 else:
     st.warning("Please upload CSV file(s).")
     st.stop()
+
+invoice_data
+
+
+# Get all of the orders including their buyer and seller where qty non zero
+# instantiate empty order list: "orders": []
+# Iterate orders from 1. and create order when it doenst already exist. Also add seller if not exist
 
 st.markdown("")
 st.markdown("---")

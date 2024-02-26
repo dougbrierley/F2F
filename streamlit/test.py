@@ -18,13 +18,21 @@ if not buyers:
     print("No buyers this week")
 
 
-# invoice_data = pd.DataFrame(columns=["buyer", "seller", "produce", "variant", "unit", "price", "qty"])
-
 invoice_data = {
     "orders": []
 }
 
+contacts = contacts.rename(columns={
+    'Buyer': 'name', 
+    'Address Line 1': 'address1',
+    'Address Line 2': 'adress2', 
+    'City': 'city',
+    'Postcode': 'postcode',
+    'City': 'city', 
+    'Country': 'country'
+    })
 
+single_orders = []
 
 for buyer in buyers:
     # Save the rows that are non-zero for the current buyer
@@ -35,18 +43,28 @@ for buyer in buyers:
 
     lines = dict.fromkeys(sellers, [])
 
+    
+
     for index, row in non_zero_rows.iterrows():
-        lines[row["Growers"]].append({
+        line = {
             "produce": row["Produce Name"],
             "variant": row["Additional Info"],
             "unit": row["UNIT"],
-            "price": row["Price/   UNIT (£)"]*row[buyer],
-            "qty": row[buyer]})
+            "price": row["Price/   UNIT (£)"],
+            "qty": row[buyer]}
+        lines[row["Growers"]].append(line)
+
+
+
+    buyer_info = contacts[contacts["name"] == buyer]
+    buyer_info = buyer_info.to_dict(orient="records")
+
     order = {
-        "buyer": buyer,
+        "buyer": buyer_info,
         "lines": lines
     }
-    invoice_data["orders"] = order
 
+    invoice_data["orders"].append(order)
 print(invoice_data)
+
 
