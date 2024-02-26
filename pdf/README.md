@@ -40,6 +40,15 @@ cargo lambda deploy
 
 This will deploy the lambdas to AWS Lambda.
 
+#### Deploying with a different profile
+
+To deploy the lambdas with a different profile, run:
+
+```sh
+cargo lambda deploy --iam-role FULL_ROLE_ARN <binary>
+```
+
+Use `arn:aws:iam::850434255294:role/s3-lambda-invoke` to invoke with s3.
 ## Command line tool
 
 This project also includes a command line tool that can be used to generate PDFs from orders. To use it, run:

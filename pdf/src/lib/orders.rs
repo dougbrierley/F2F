@@ -1,14 +1,36 @@
+use aws_sdk_s3 as s3;
 use calamine::{open_workbook, Data, DataType, Error, RangeDeserializerBuilder, Reader, Xlsx};
 use chrono::prelude::*;
+use printpdf::PdfDocumentReference;
 use printpdf::{Color, IndirectFontRef, Mm, PdfDocument, PdfLayerReference, Rgb};
-use termcolor::{ColorChoice, ColorSpec, StandardStream, WriteColor};
+use s3::error::SdkError;
+use s3::operation::put_object::PutObjectError;
+use s3::operation::put_object::PutObjectOutput;
+use s3::primitives::ByteStream;
+use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::BufWriter;
 use std::io::Write;
-use serde::{Deserialize, Serialize};
+use termcolor::{ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 use crate::pdf::add_hr;
 use crate::utils::{format_currency, headers};
+
+use std::include_bytes;
+
+const FONT_BYTES_ROBOTO_MED: &[u8] = include_bytes!("../../assets/fonts/Roboto-Medium.ttf");
+const FONT_BYTES_ROBOTO_REG: &[u8] = include_bytes!("../../assets/fonts/Roboto-Regular.ttf");
+const FONT_BYTES_OSWALD: &[u8] = include_bytes!("../../assets/fonts/Oswald-Medium.ttf");
+
+    // let medium = doc
+    //     .add_external_font(File::open("assets/fonts/Roboto-Medium.ttf").unwrap())
+    //     .unwrap();
+    // let normal_roboto = doc
+    //     .add_external_font(File::open("assets/fonts/Roboto-Regular.ttf").unwrap())
+    //     .unwrap();
+    // let oswald = doc
+    //     .add_external_font(File::open("assets/fonts/Oswald-Medium.ttf").unwrap())
+    //     .unwrap();
 
 struct BuyerDetails {
     name: String,
@@ -24,7 +46,7 @@ struct BuyerDetails {
 pub struct Order {
     buyer: String,
     lines: std::collections::HashMap<String, Vec<OrderLine>>,
-} 
+}
 
 #[derive(Debug, Deserialize, Serialize)]
 /// An order for a buyer along with a hashmap of produce and order lines.
@@ -102,21 +124,42 @@ fn add_table_header(current_layer: &PdfLayerReference, font: &IndirectFontRef, y
     add_hr(current_layer, y_tracker_mm, 1.0);
 }
 
-pub fn create_buyer_order(order: &Order) {
+pub struct S3Object {
+    key: String,
+    bucket: String,
+}
+
+fn create_buyer_order(order: &Order) {
+    let doc = create_buyer_order_pdf(order);
+    let path_name = format!("generated/{}.pdf", order.buyer);
+    doc.save(&mut BufWriter::new(File::create(path_name).unwrap()))
+        .unwrap();
+}
+
+pub fn create_buyer_order_pdf(order: &Order) -> PdfDocumentReference {
     let pdf_title = format!("Order for {}", order.buyer);
     let (doc, page1, layer1) = PdfDocument::new(pdf_title, Mm(210.0), Mm(297.0), "Layer 1");
     let current_layer = doc.get_page(page1).get_layer(layer1);
 
     let mut y_tracker_mm = 267.0;
 
+    // let medium = doc
+    //     .add_external_font(File::open("assets/fonts/Roboto-Medium.ttf").unwrap())
+    //     .unwrap();
+    // let normal_roboto = doc
+    //     .add_external_font(File::open("assets/fonts/Roboto-Regular.ttf").unwrap())
+    //     .unwrap();
+    // let oswald = doc
+    //     .add_external_font(File::open("assets/fonts/Oswald-Medium.ttf").unwrap())
+    //     .unwrap();
     let medium = doc
-        .add_external_font(File::open("assets/fonts/Roboto-Medium.ttf").unwrap())
+        .add_external_font(FONT_BYTES_ROBOTO_MED)
         .unwrap();
     let normal_roboto = doc
-        .add_external_font(File::open("assets/fonts/Roboto-Regular.ttf").unwrap())
+        .add_external_font(FONT_BYTES_ROBOTO_REG)
         .unwrap();
     let oswald = doc
-        .add_external_font(File::open("assets/fonts/Oswald-Medium.ttf").unwrap())
+        .add_external_font(FONT_BYTES_OSWALD)
         .unwrap();
 
     current_layer.begin_text_section();
@@ -165,8 +208,6 @@ pub fn create_buyer_order(order: &Order) {
     current_layer.write_text(&dt.format("%d/%m/%Y").to_string(), &normal_roboto);
 
     current_layer.end_text_section();
-
-
 
     let buyer_details = BuyerDetails {
         name: order.buyer.clone(),
@@ -223,10 +264,23 @@ pub fn create_buyer_order(order: &Order) {
     let total = total_per_order(order);
     add_total(&current_layer, &medium, &oswald, y_tracker_mm, total);
 
-    let path_name = format!("generated/{}.pdf", order.buyer);
+    doc
+}
 
-    doc.save(&mut BufWriter::new(File::create(path_name).unwrap()))
-        .unwrap();
+pub async fn upload_object(
+    client: &aws_sdk_s3::Client,
+    bytes: Vec<u8>,
+    bucket_name: &str,
+    key: &str,
+) -> Result<PutObjectOutput, SdkError<PutObjectError>> {
+    let body = ByteStream::from(bytes);
+    client
+        .put_object()
+        .bucket(bucket_name)
+        .key(key)
+        .body(body)
+        .send()
+        .await
 }
 
 fn add_order_line(
@@ -380,6 +434,53 @@ pub fn create_buyer_orders(orders: Vec<&Order>) {
     for order in orders {
         create_buyer_order(order)
     }
+}
+
+fn generate_link(s3_object: &S3Object) -> String {
+    format!(
+        "https://{}.s3.eu-west-2.amazonaws.com/{}",
+        s3_object.bucket, s3_object.key
+    )
+}
+
+pub async fn create_buyer_orders_s3(orders: Vec<&Order>) -> Result<Vec<String>, Box<dyn std::error::Error>>{
+    let mut s3_objects = Vec::<String>::new();
+    for order in orders {
+        match create_buyer_order_s3(order).await {
+            Ok(s3_object) => s3_objects.push(generate_link(&s3_object)),
+            Err(e) => {
+                return Err(e);
+            }
+        }
+    }
+
+    Ok(s3_objects)
+}
+
+pub async fn create_buyer_order_s3(order: &Order) -> Result<S3Object, Box<dyn std::error::Error>> {
+    let doc = create_buyer_order_pdf(order);
+    
+    let bucket_name = "serverless-s3-dev-ftfbucket-xcri21szhuya";
+    let key = format!("{}.pdf", order.buyer);
+
+    let config = aws_config::load_from_env().await;
+    let client = aws_sdk_s3::Client::new(&config);
+    let bytes = match doc.save_to_bytes() {
+        Ok(b) => b,
+        Err(e) => {
+            panic!("Error: {}", e);
+        }
+    };
+    match upload_object(&client, bytes, bucket_name, &key).await {
+        Ok(_) => {}
+        Err(e) => {
+            panic!("Error: {}", e);
+        }
+    }
+    Ok(S3Object {
+        key,
+        bucket: bucket_name.to_string(),
+    })
 }
 
 pub fn create_orders(path: std::path::PathBuf) -> Result<(), Error> {
