@@ -2,7 +2,7 @@
   "invoices": [
     {
       "date": "YYYY-MM-DD",
-      "due": "YYYY-MM-DD",
+      "due_date": "YYYY-MM-DD",
       "number": "VCC1812",
       "reference": "Farm2Fork January",
       "buyer": {
@@ -13,66 +13,40 @@
         "postcode": "62701",
         "country": "USA"
       },
-      "lines": {
-        "Big Vec Dude": [
-          {
-            "produce": "Carrots",
-            "variant": "Orange",
-            "unit": "lb",
-            "price": 199,
-            "qty": 2.0,
-            "vat_rate": 0.2,
-            "date": "DD/MM"
-          },
-          {
-            "produce": "Carrots",
-            "variant": "Purple",
-            "unit": "lb",
-            "price": 299,
-            "qty": 1.0,
-            "vat_rate": 0.2,
-            "date": "16/02"
-          },
-          {
-            "produce": "Broccoli",
-            "variant": "",
-            "unit": "lb",
-            "price": 399,
-            "qty": 1.0,
-            "vat_rate": 0,
-            "date": "16/02"
-          },
-          {
-            "produce": "Delivery Fee",
-            "variant": "16th, 23rd, 30th",
-            "unit": "single",
-            "price": 800,
-            "qty": 3.0,
-            "vat_rate": 0.2,
-            "date": "DD/MM"
-          }
-        ],
-        "Another Seller": [
-          {
-            "produce": "Wheat",
-            "variant": "Lots of them",
-            "unit": "kg",
-            "price": 200,
-            "qty": 2.5,
-            "vat_rate": 0.2,
-            "date": "27/02"
-          },
-          {
-            "produce": "Wheat",
-            "variant": "Yeo",
-            "unit": "kg",
-            "price": 500,
-            "qty": 4.5,
-            "vat_rate": 0,
-            "date": "27/02"
-          }
-        ]
-      }
+      "lines": [
+        {
+          "item": "Carrots",
+          "unit": "lb",
+          "price": 199,
+          "qty": 2.0,
+          "vat_rate": 0.2,
+          "date": "DD/MM"
+        },
+        {
+          "item": "Carrots 2",
+          "unit": "lb",
+          "price": 299,
+          "qty": 1.0,
+          "vat_rate": 0.2,
+          "date": "16/02"
+        },
+        {
+          "item": "Carrots",
+          "unit": "lb",
+          "price": 399,
+          "qty": 1.0,
+          "vat_rate": 0,
+          "date": "16/02"
+        },
+        {
+          "item": "Delivery Fee",
+          "unit": "single",
+          "price": 800,
+          "qty": 3.0,
+          "vat_rate": 0.2,
+          "date": "DD/MM"
+        }
+      ]
     }
   ]
 }

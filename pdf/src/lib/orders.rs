@@ -1,12 +1,7 @@
-use aws_sdk_s3 as s3;
 use calamine::{open_workbook, Data, DataType, Error, RangeDeserializerBuilder, Reader, Xlsx};
 use chrono::prelude::*;
 use printpdf::PdfDocumentReference;
 use printpdf::{Color, IndirectFontRef, Mm, PdfDocument, PdfLayerReference, Rgb};
-use s3::error::SdkError;
-use s3::operation::put_object::PutObjectError;
-use s3::operation::put_object::PutObjectOutput;
-use s3::primitives::ByteStream;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::BufWriter;
@@ -14,23 +9,13 @@ use std::io::Write;
 use termcolor::{ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 use crate::pdf::add_hr;
-use crate::utils::{format_currency, headers};
+use crate::utils::{format_currency, generate_link, headers, upload_object, S3Object};
 
 use std::include_bytes;
 
 const FONT_BYTES_ROBOTO_MED: &[u8] = include_bytes!("../../assets/fonts/Roboto-Medium.ttf");
 const FONT_BYTES_ROBOTO_REG: &[u8] = include_bytes!("../../assets/fonts/Roboto-Regular.ttf");
 const FONT_BYTES_OSWALD: &[u8] = include_bytes!("../../assets/fonts/Oswald-Medium.ttf");
-
-    // let medium = doc
-    //     .add_external_font(File::open("assets/fonts/Roboto-Medium.ttf").unwrap())
-    //     .unwrap();
-    // let normal_roboto = doc
-    //     .add_external_font(File::open("assets/fonts/Roboto-Regular.ttf").unwrap())
-    //     .unwrap();
-    // let oswald = doc
-    //     .add_external_font(File::open("assets/fonts/Oswald-Medium.ttf").unwrap())
-    //     .unwrap();
 
 struct BuyerDetails {
     name: String,
@@ -124,11 +109,6 @@ fn add_table_header(current_layer: &PdfLayerReference, font: &IndirectFontRef, y
     add_hr(current_layer, y_tracker_mm, 1.0);
 }
 
-pub struct S3Object {
-    key: String,
-    bucket: String,
-}
-
 fn create_buyer_order(order: &Order) {
     let doc = create_buyer_order_pdf(order);
     let path_name = format!("generated/{}.pdf", order.buyer);
@@ -152,15 +132,9 @@ pub fn create_buyer_order_pdf(order: &Order) -> PdfDocumentReference {
     // let oswald = doc
     //     .add_external_font(File::open("assets/fonts/Oswald-Medium.ttf").unwrap())
     //     .unwrap();
-    let medium = doc
-        .add_external_font(FONT_BYTES_ROBOTO_MED)
-        .unwrap();
-    let normal_roboto = doc
-        .add_external_font(FONT_BYTES_ROBOTO_REG)
-        .unwrap();
-    let oswald = doc
-        .add_external_font(FONT_BYTES_OSWALD)
-        .unwrap();
+    let medium = doc.add_external_font(FONT_BYTES_ROBOTO_MED).unwrap();
+    let normal_roboto = doc.add_external_font(FONT_BYTES_ROBOTO_REG).unwrap();
+    let oswald = doc.add_external_font(FONT_BYTES_OSWALD).unwrap();
 
     current_layer.begin_text_section();
 
@@ -265,22 +239,6 @@ pub fn create_buyer_order_pdf(order: &Order) -> PdfDocumentReference {
     add_total(&current_layer, &medium, &oswald, y_tracker_mm, total);
 
     doc
-}
-
-pub async fn upload_object(
-    client: &aws_sdk_s3::Client,
-    bytes: Vec<u8>,
-    bucket_name: &str,
-    key: &str,
-) -> Result<PutObjectOutput, SdkError<PutObjectError>> {
-    let body = ByteStream::from(bytes);
-    client
-        .put_object()
-        .bucket(bucket_name)
-        .key(key)
-        .body(body)
-        .send()
-        .await
 }
 
 fn add_order_line(
@@ -436,14 +394,9 @@ pub fn create_buyer_orders(orders: Vec<&Order>) {
     }
 }
 
-fn generate_link(s3_object: &S3Object) -> String {
-    format!(
-        "https://{}.s3.eu-west-2.amazonaws.com/{}",
-        s3_object.bucket, s3_object.key
-    )
-}
-
-pub async fn create_buyer_orders_s3(orders: Vec<&Order>) -> Result<Vec<String>, Box<dyn std::error::Error>>{
+pub async fn create_buyer_orders_s3(
+    orders: Vec<&Order>,
+) -> Result<Vec<String>, Box<dyn std::error::Error>> {
     let mut s3_objects = Vec::<String>::new();
     for order in orders {
         match create_buyer_order_s3(order).await {
@@ -459,7 +412,7 @@ pub async fn create_buyer_orders_s3(orders: Vec<&Order>) -> Result<Vec<String>, 
 
 pub async fn create_buyer_order_s3(order: &Order) -> Result<S3Object, Box<dyn std::error::Error>> {
     let doc = create_buyer_order_pdf(order);
-    
+
     let bucket_name = "serverless-s3-dev-ftfbucket-xcri21szhuya";
     let key = format!("{}.pdf", order.buyer);
 
@@ -477,10 +430,7 @@ pub async fn create_buyer_order_s3(order: &Order) -> Result<S3Object, Box<dyn st
             panic!("Error: {}", e);
         }
     }
-    Ok(S3Object {
-        key,
-        bucket: bucket_name.to_string(),
-    })
+    Ok(S3Object::new(key, bucket_name.to_string()))
 }
 
 pub fn create_orders(path: std::path::PathBuf) -> Result<(), Error> {
