@@ -3,7 +3,7 @@ import pandas as pd
 import boto3
 import json
 
-st.set_page_config(page_title="Delivery Notes Generator")
+st.set_page_config(page_title="Invoice Generator")
 
 hide_streamlit_style = """
             <style>
@@ -13,7 +13,7 @@ hide_streamlit_style = """
             """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-st.title("Delivery Notes Generator")
+st.title("Invoice Generator")
 
 st.markdown("Upload weekly order excel and contacts CSV to generate delivery notes.")
 
