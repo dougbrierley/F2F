@@ -2,53 +2,51 @@ import pandas as pd
 import numpy as np
 import json
 
-orders = pd.read_excel("example_data/OxFarmToFork 07_09_2023.xlsx", header=2)
-orders = orders.dropna(subset=['Produce Name'])
+orders = pd.read_excel("example_data/OxFarmToFork Week 4.xlsx", header=2)
 contacts = pd.read_excel("example_data/FarmToFork_Invoice_Contacts.xlsx")
 
-print(orders)   # Create a dictionary to store the JSON structure
-json_data = {
+# Remove rows with no produce name (i.e. nothing listed)
+orders = orders.dropna(subset=["Produce Name"])
+
+# Remove rows where the sum of columns 9 onwards (the buyers area) is equal to 0
+orders = orders.loc[(orders.iloc[:, 9:].sum(axis=1) != 0)]
+
+# Get the names of the buyers that made orders this week
+buyers = orders.columns[9:][orders.iloc[:, 9:].sum() > 0].tolist()
+
+if not buyers:
+    print("No buyers this week")
+
+
+# invoice_data = pd.DataFrame(columns=["buyer", "seller", "produce", "variant", "unit", "price", "qty"])
+
+invoice_data = {
     "orders": []
 }
 
 
-# Iterate over each unique buyer in the orders dataframe
-for buyer in contacts['Buyer']:
-    buyer_orders = {
+
+for buyer in buyers:
+    # Save the rows that are non-zero for the current buyer
+    non_zero_rows = orders.loc[orders[buyer] != 0].reset_index(drop=True)
+
+    # Get the unique sellers for the produce that the buyer has ordered
+    sellers = non_zero_rows["Growers"].unique()
+
+    lines = dict.fromkeys(sellers, [])
+
+    for index, row in non_zero_rows.iterrows():
+        lines[row["Growers"]].append({
+            "produce": row["Produce Name"],
+            "variant": row["Additional Info"],
+            "unit": row["UNIT"],
+            "price": row["Price/   UNIT (£)"]*row[buyer],
+            "qty": row[buyer]})
+    order = {
         "buyer": buyer,
-        "lines": {}
+        "lines": lines
     }
-    
-    # Filter the orders dataframe for the current buyer
-    buyer_df = orders[orders['Buyer'] == buyer]
+    invoice_data["orders"] = order
 
-    
-    # Iterate over each unique seller for the current buyer
-    for seller in buyer_df['Seller'].unique():
-        seller_orders = []
-        
-        # Filter the buyer dataframe for the current seller
-        seller_df = buyer_df[buyer_df['Seller'] == seller]
-        
-        # Iterate over each row in the seller dataframe
-        for _, row in seller_df.iterrows():
-            order = {
-                "produce": row['Produce Name'],
-                "variant": row['Variant'],
-                "unit": row['Unit'],
-                "price": row['Price'],
-                "qty": row['Qty']
-            }
-            
-            seller_orders.append(order)
-        
-        buyer_orders["lines"][seller] = seller_orders
-    
-    json_data["orders"].append(buyer_orders)
+print(invoice_data)
 
-# Convert the dictionary to JSON string
-json_string = json.dumps(json_data, indent=2)
-
-# Write the JSON string to a file
-with open("orders.json", "w") as json_file:
-    json_file.write(json_string)
