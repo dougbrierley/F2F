@@ -32,39 +32,73 @@ contacts = contacts.rename(columns={
     'Country': 'country'
     })
 
-single_orders = []
+my_order_lines = []
+
+orders = orders.rename(columns={
+    "Produce Name": "produce",
+    "Additional Info": "variant",
+    "UNIT": "unit",
+    "Price/   UNIT (£)": "price",
+    "Growers": "seller"
+    })
 
 for buyer in buyers:
     # Save the rows that are non-zero for the current buyer
-    non_zero_rows = orders.loc[orders[buyer] != 0].reset_index(drop=True)
+    non_zero_rows = orders.loc[orders[buyer] != 0]
 
-    # Get the unique sellers for the produce that the buyer has ordered
-    sellers = non_zero_rows["Growers"].unique()
-
-    lines = dict.fromkeys(sellers, [])
+    # Create a new dataframe with the first 8 columns of non_zero_rows and an additional column for orders[buyer]
+    buyer_lines = non_zero_rows.iloc[:, :5].copy()
+    buyer_lines["qty"] = non_zero_rows[buyer]
+    buyer_lines.loc[ : ,"buyer"] = buyer
 
     
+    buyer_lines = buyer_lines.to_dict(orient="records")
+    for line in buyer_lines:
+        my_order_lines.append(line)
+print(my_order_lines)
 
-    for index, row in non_zero_rows.iterrows():
-        line = {
-            "produce": row["Produce Name"],
-            "variant": row["Additional Info"],
-            "unit": row["UNIT"],
-            "price": row["Price/   UNIT (£)"],
-            "qty": row[buyer]}
-        lines[row["Growers"]].append(line)
+    
+sellers = set()
+
+buyer_lines = dict.fromkeys(buyers, {})
+
+# {
+#     "John Doe": {
+#         "OxFarm": [
+#             {...orderline}
+#           ]
+# },
+# }
+
+selective_list = ["produce", "variant", "unit", "price", "qty"]
+
+for line in my_order_lines:
+    if line["seller"] not in buyer_lines[line["buyer"]]:
+        buyer_lines[line["buyer"]][line["seller"]] = []
+    line_without_buyer = {k: v for k, v in line.items() if k not in ["buyer", "seller"]}
+    buyer_lines[line["buyer"]][line["seller"]].append(line_without_buyer)
+
+orders = []
+
+for buyer, seller_lines in buyer_lines.items():
+    orders.append({
+        "buyer": buyer,
+        "lines": seller_lines
+    })
 
 
+final_data = {
+    "orders": orders
+}
+print(final_data)
 
-    buyer_info = contacts[contacts["name"] == buyer]
-    buyer_info = buyer_info.to_dict(orient="records")
 
-    order = {
-        "buyer": buyer_info,
-        "lines": lines
-    }
+# order = {
+#     "buyer": buyer_info,
+#     "lines": lines
+# }
 
-    invoice_data["orders"].append(order)
-print(invoice_data)
+# invoice_data["orders"].append(order)
+# print(invoice_data)
 
 
