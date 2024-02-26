@@ -30,6 +30,7 @@
             "unit": "lb",
             "price": 299,
             "qty": 1.0,
+            "vat_rate": 0.2,
             "date": "16/02"
           },
           {
@@ -38,6 +39,7 @@
             "unit": "lb",
             "price": 399,
             "qty": 1.0,
+            "vat_rate": 0,
             "date": "16/02"
           },
           {
@@ -46,6 +48,7 @@
             "unit": "single",
             "price": 800,
             "qty": 3.0,
+            "vat_rate": 0.2,
             "date": "DD/MM"
           }
         ],
@@ -56,6 +59,7 @@
             "unit": "kg",
             "price": 200,
             "qty": 2.5,
+            "vat_rate": 0.2,
             "date": "27/02"
           },
           {
@@ -64,6 +68,7 @@
             "unit": "kg",
             "price": 500,
             "qty": 4.5,
+            "vat_rate": 0,
             "date": "27/02"
           }
         ]
