@@ -1,4 +1,0 @@
-
-getBibleData:
-  runtime: python3.11
-  handler: functions/invoice_contacts_data_loader.handler
