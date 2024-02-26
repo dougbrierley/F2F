@@ -1,4 +1,3 @@
-use chrono::prelude::*;
 use printpdf::PdfDocumentReference;
 use printpdf::{Color, IndirectFontRef, Mm, PdfDocument, PdfLayerReference, Rgb};
 use regex::Regex;
@@ -6,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::fs::{self, File};
 use std::io::BufWriter;
 
-use crate::pdf::add_hr;
+use crate::pdf::{add_hr, add_hr_width};
 use crate::utils::{format_currency, generate_link, upload_object, vat_rate_string, S3Object};
 
 use std::include_bytes;
@@ -66,7 +65,7 @@ fn is_in_month(file_name: &str, month: &str) -> bool {
     false
 }
 
-const FONT_BYTES_ROBOTO_MED: &[u8] = include_bytes!("../../assets/fonts/Roboto-Medium.ttf");
+// const FONT_BYTES_ROBOTO_MED: &[u8] = include_bytes!("../../assets/fonts/Roboto-Medium.ttf");
 const FONT_BYTES_ROBOTO_REG: &[u8] = include_bytes!("../../assets/fonts/Roboto-Regular.ttf");
 const FONT_BYTES_OSWALD: &[u8] = include_bytes!("../../assets/fonts/Oswald-Medium.ttf");
 
@@ -120,7 +119,7 @@ impl Invoice {
         let file = File::open(file_path).unwrap();
         let reader = std::io::BufReader::new(file);
         let invoices: Invoices = serde_json::from_reader(reader).unwrap();
-        
+
         invoices.invoices
     }
 }
@@ -150,6 +149,37 @@ fn add_table_header(current_layer: &PdfLayerReference, font: &IndirectFontRef, y
     add_hr(current_layer, y_tracker_mm, 1.0);
 }
 
+fn add_receiver(current_layer: &PdfLayerReference, font: &IndirectFontRef, y_tracker_mm: f32, due_date: &str) {
+    current_layer.begin_text_section();
+    current_layer.set_font(&font, 10.0);
+    current_layer.set_text_cursor(Mm(10.0), Mm(y_tracker_mm));
+
+    current_layer.set_line_height(12.0);
+    // write two lines (one line break)
+    current_layer.use_text(format!("Due Date: {}", due_date), 12.0, Mm(10.0), Mm(y_tracker_mm), &font);
+    current_layer.use_text("Please make payment to", 10.0, Mm(10.0), Mm(y_tracker_mm-4.0), &font);
+
+    current_layer.end_text_section();
+
+    current_layer.begin_text_section();
+    current_layer.set_font(&font, 10.0);
+    current_layer.set_text_cursor(Mm(10.0), Mm(y_tracker_mm-16.0));
+
+    current_layer.set_line_height(12.0);
+    // write two lines (one line break)
+    current_layer.write_text("Velocity Cycle Couriers Limited", &font);
+    current_layer.add_line_break();
+    current_layer.write_text("Co. Reg. 06502183", &font);
+    current_layer.add_line_break();
+    current_layer.write_text("Starling Bank", &font);
+    current_layer.add_line_break();
+    current_layer.write_text("Account Number: 19501950", &font);
+    current_layer.add_line_break();
+    current_layer.write_text("Sort Code: 608371", &font);
+
+    current_layer.end_text_section();
+}
+
 pub fn create_invoice_pdf(invoice: &Invoice) -> PdfDocumentReference {
     let pdf_title = format!("Order for {}", invoice.buyer.name);
     let (doc, page1, layer1) = PdfDocument::new(pdf_title, Mm(210.0), Mm(297.0), "Layer 1");
@@ -157,23 +187,25 @@ pub fn create_invoice_pdf(invoice: &Invoice) -> PdfDocumentReference {
 
     let mut y_tracker_mm = 267.0;
 
-    let medium = doc.add_external_font(FONT_BYTES_ROBOTO_MED).unwrap();
+    // let medium = doc.add_external_font(FONT_BYTES_ROBOTO_MED).unwrap();
     let normal_roboto = doc.add_external_font(FONT_BYTES_ROBOTO_REG).unwrap();
     let oswald = doc.add_external_font(FONT_BYTES_OSWALD).unwrap();
 
     current_layer.begin_text_section();
 
-    current_layer.set_font(&oswald, 46.0);
-    current_layer.set_text_cursor(Mm(10.0), Mm(y_tracker_mm));
+    current_layer.use_text("Company Registration No: 06502183. Registered Office: Attention: Jake Swinhoe, 38 Kennington Road, Kennington, Oxford, OX1 5PB, GBR.", 8.0, Mm(10.0), Mm(10.0), &normal_roboto);
+
     current_layer.set_line_height(8.0);
     current_layer.set_word_spacing(0.0);
     current_layer.set_character_spacing(0.0);
 
-    current_layer.write_text("TAX INVOICE", &oswald);
+    current_layer.use_text("TAX INVOICE", 46.0, Mm(10.0), Mm(267.0), &oswald);
+
+    y_tracker_mm -= 11.0;
 
     current_layer.end_text_section();
 
-    let details_x = Mm(130.0);
+    let mut details_x = Mm(100.0);
     let font_size_details = 10.0;
 
     current_layer.begin_text_section();
@@ -181,47 +213,143 @@ pub fn create_invoice_pdf(invoice: &Invoice) -> PdfDocumentReference {
     current_layer.set_text_cursor(Mm(140.0), Mm(y_tracker_mm));
     current_layer.set_fill_color(Color::Rgb(Rgb::new(0.0, 0.04, 0.0, None)));
 
-    current_layer.use_text("Invoice Date", font_size_details, details_x, Mm(y_tracker_mm),&oswald);
+    current_layer.use_text(
+        "Invoice Date",
+        font_size_details,
+        details_x,
+        Mm(y_tracker_mm),
+        &oswald,
+    );
     y_tracker_mm -= 4.0;
-    current_layer.use_text(&invoice.date , font_size_details, details_x, Mm(y_tracker_mm), &normal_roboto);
+    current_layer.use_text(
+        &invoice.date,
+        font_size_details,
+        details_x,
+        Mm(y_tracker_mm),
+        &normal_roboto,
+    );
     y_tracker_mm -= 6.0;
 
-    current_layer.use_text("Invoice #", font_size_details, details_x, Mm(y_tracker_mm),&oswald);
+    current_layer.use_text(
+        "Invoice #",
+        font_size_details,
+        details_x,
+        Mm(y_tracker_mm),
+        &oswald,
+    );
     y_tracker_mm -= 4.0;
-    current_layer.use_text("F2F0601" , font_size_details, details_x, Mm(y_tracker_mm), &normal_roboto);
+    current_layer.use_text(
+        "F2F0601",
+        font_size_details,
+        details_x,
+        Mm(y_tracker_mm),
+        &normal_roboto,
+    );
     y_tracker_mm -= 6.0;
-    
-    current_layer.use_text("Reference", font_size_details, details_x, Mm(y_tracker_mm),&oswald);
+
+    current_layer.use_text(
+        "Reference",
+        font_size_details,
+        details_x,
+        Mm(y_tracker_mm),
+        &oswald,
+    );
     y_tracker_mm -= 4.0;
-    current_layer.use_text(&invoice.reference , font_size_details, details_x, Mm(y_tracker_mm), &normal_roboto);
+    current_layer.use_text(
+        &invoice.reference,
+        font_size_details,
+        details_x,
+        Mm(y_tracker_mm),
+        &normal_roboto,
+    );
     y_tracker_mm -= 6.0;
-    
-    current_layer.use_text("VAT Number", font_size_details, details_x, Mm(y_tracker_mm),&oswald);
+
+    current_layer.use_text(
+        "VAT Number",
+        font_size_details,
+        details_x,
+        Mm(y_tracker_mm),
+        &oswald,
+    );
     y_tracker_mm -= 4.0;
-    current_layer.use_text("927642308" , font_size_details, details_x, Mm(y_tracker_mm), &normal_roboto);
+    current_layer.use_text(
+        "927642308",
+        font_size_details,
+        details_x,
+        Mm(y_tracker_mm),
+        &normal_roboto,
+    );
+
+    y_tracker_mm = 256.0;
+
+    details_x = Mm(145.0);
+
+    current_layer.use_text(
+        "Velocity Cycle Couriers Limited",
+        font_size_details,
+        details_x,
+        Mm(y_tracker_mm),
+        &normal_roboto,
+    );
+    y_tracker_mm -= 4.0;
+    current_layer.use_text(
+        "Attention: Jake Swinhoe",
+        font_size_details,
+        details_x,
+        Mm(y_tracker_mm),
+        &normal_roboto,
+    );
+    y_tracker_mm -= 4.0;
+    current_layer.use_text(
+        "38 Kennington Road",
+        font_size_details,
+        details_x,
+        Mm(y_tracker_mm),
+        &normal_roboto,
+    );
+    y_tracker_mm -= 4.0;
+    current_layer.use_text(
+        "Kennington",
+        font_size_details,
+        details_x,
+        Mm(y_tracker_mm),
+        &normal_roboto,
+    );
+    y_tracker_mm -= 4.0;
+    current_layer.use_text(
+        "Oxford",
+        font_size_details,
+        details_x,
+        Mm(y_tracker_mm),
+        &normal_roboto,
+    );
+    y_tracker_mm -= 4.0;
+    current_layer.use_text(
+        "OX1 5PB",
+        font_size_details,
+        details_x,
+        Mm(y_tracker_mm),
+        &normal_roboto,
+    );
+    y_tracker_mm -= 4.0;
+    current_layer.use_text(
+        "GBR",
+        font_size_details,
+        details_x,
+        Mm(y_tracker_mm),
+        &normal_roboto,
+    );
 
     y_tracker_mm = 267.0 - 12.0;
 
     current_layer.begin_text_section();
     current_layer.set_text_cursor(Mm(140.0), Mm(y_tracker_mm));
 
-    // let dt = Utc.with_ymd_and_hms(2024, 2, 20, 0, 0, 0).unwrap();
-
-    // current_layer.set_font(&oswald, 12.0);
-    // current_layer.write_text("ORDER DATE", &oswald);
-    // current_layer.end_text_section();
-
-    // current_layer.begin_text_section();
-    // current_layer.set_text_cursor(Mm(180.0), Mm(y_tracker_mm));
-    // current_layer.set_font(&normal_roboto, 10.0);
-    // current_layer.write_text(&dt.format("%d/%m/%Y").to_string(), &normal_roboto);
-
-
     current_layer.begin_text_section();
 
     current_layer.set_font(&oswald, 14.0);
     current_layer.set_text_cursor(Mm(10.0), Mm(y_tracker_mm));
-    current_layer.write_text("DELIVER TO", &oswald);
+    current_layer.write_text("BILL TO", &oswald);
 
     current_layer.end_text_section();
 
@@ -261,7 +389,10 @@ pub fn create_invoice_pdf(invoice: &Invoice) -> PdfDocumentReference {
     );
     let summary = InvoiceSummary::from_invoice(invoice);
     // let total = total_per_order(invoice);
-    add_total(&current_layer, &medium, &oswald, y_tracker_mm, summary);
+    add_total(&current_layer, &normal_roboto, y_tracker_mm, summary);
+
+    let due_date = chrono::NaiveDate::parse_from_str(&invoice.due_date, "%Y-%m-%d").unwrap();
+    add_receiver(&current_layer, &normal_roboto, y_tracker_mm-30.0, due_date.format("%d %b %Y").to_string().as_str());
 
     doc
 }
@@ -364,27 +495,41 @@ impl InvoiceSummary {
 fn add_total(
     current_layer: &PdfLayerReference,
     font: &IndirectFontRef,
-    font_special: &IndirectFontRef,
     y_tracker_mm: f32,
     summary: InvoiceSummary,
 ) {
-    let font_size = 14.0;
+    let font_size = 12.0;
 
     add_hr(current_layer, y_tracker_mm, 1.0);
 
+    let left = Mm(140.0);
+    let right = Mm(180.0);
+
     current_layer.begin_text_section();
+    current_layer.use_text("Subtotal", font_size, left, Mm(y_tracker_mm - 8.0), &font);
     current_layer.use_text(
-        "TOTAL",
+        format_currency(summary.subtotal),
         font_size,
-        Mm(10.0),
+        right,
         Mm(y_tracker_mm - 8.0),
-        &font_special,
+        &font,
     );
+
+    current_layer.use_text("VAT", font_size, left, Mm(y_tracker_mm - 14.0), &font);
+    current_layer.use_text(
+        format_currency(summary.vat),
+        font_size,
+        right,
+        Mm(y_tracker_mm - 14.0),
+        &font,
+    );
+    add_hr_width(current_layer, y_tracker_mm - 14.0, 1.0, 140.0, 200.0);
+    current_layer.use_text("Total", font_size, left, Mm(y_tracker_mm - 20.0), &font);
     current_layer.use_text(
         format_currency(summary.total),
         font_size,
-        Mm(180.0),
-        Mm(y_tracker_mm - 8.0),
+        right,
+        Mm(y_tracker_mm - 20.0),
         &font,
     );
     current_layer.end_text_section();

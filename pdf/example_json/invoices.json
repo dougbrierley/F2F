@@ -1,8 +1,8 @@
 {
   "invoices": [
     {
-      "date": "YYYY-MM-DD",
-      "due_date": "YYYY-MM-DD",
+      "date": "2024-02-28",
+      "due_date": "2024-03-14",
       "number": "VCC1812",
       "reference": "Farm2Fork January",
       "buyer": {
@@ -17,9 +17,9 @@
         {
           "item": "Carrots",
           "price": 199,
-          "qty": 2.0,
+          "qty": 2.5,
           "vat_rate": 0.2,
-          "date": "DD/MM"
+          "date": "07/02"
         },
         {
           "item": "Carrots 2",
@@ -40,7 +40,7 @@
           "price": 800,
           "qty": 3.0,
           "vat_rate": 0.2,
-          "date": "DD/MM"
+          "date": "23/02"
         }
       ]
     }
