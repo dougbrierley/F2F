@@ -149,21 +149,36 @@ fn add_table_header(current_layer: &PdfLayerReference, font: &IndirectFontRef, y
     add_hr(current_layer, y_tracker_mm, 1.0);
 }
 
-fn add_receiver(current_layer: &PdfLayerReference, font: &IndirectFontRef, y_tracker_mm: f32, due_date: &str) {
+fn add_receiver(
+    current_layer: &PdfLayerReference,
+    font: &IndirectFontRef,
+    y_tracker_mm: f32,
+    due_date: &str,
+) {
     current_layer.begin_text_section();
     current_layer.set_font(&font, 10.0);
-    current_layer.set_text_cursor(Mm(10.0), Mm(y_tracker_mm));
-
     current_layer.set_line_height(12.0);
-    // write two lines (one line break)
-    current_layer.use_text(format!("Due Date: {}", due_date), 12.0, Mm(10.0), Mm(y_tracker_mm), &font);
-    current_layer.use_text("Please make payment to", 10.0, Mm(10.0), Mm(y_tracker_mm-4.0), &font);
+
+    current_layer.use_text(
+        format!("Due Date: {}", due_date),
+        12.0,
+        Mm(10.0),
+        Mm(y_tracker_mm),
+        &font,
+    );
+    current_layer.use_text(
+        "Please make payment to",
+        10.0,
+        Mm(10.0),
+        Mm(y_tracker_mm - 4.0),
+        &font,
+    );
 
     current_layer.end_text_section();
 
     current_layer.begin_text_section();
     current_layer.set_font(&font, 10.0);
-    current_layer.set_text_cursor(Mm(10.0), Mm(y_tracker_mm-16.0));
+    current_layer.set_text_cursor(Mm(10.0), Mm(y_tracker_mm - 16.0));
 
     current_layer.set_line_height(12.0);
     // write two lines (one line break)
@@ -181,7 +196,7 @@ fn add_receiver(current_layer: &PdfLayerReference, font: &IndirectFontRef, y_tra
 }
 
 pub fn create_invoice_pdf(invoice: &Invoice) -> PdfDocumentReference {
-    let pdf_title = format!("Order for {}", invoice.buyer.name);
+    let pdf_title = format!("Order for {} {}", invoice.buyer.name, invoice.date);
     let (doc, page1, layer1) = PdfDocument::new(pdf_title, Mm(210.0), Mm(297.0), "Layer 1");
     let current_layer = doc.get_page(page1).get_layer(layer1);
 
@@ -210,7 +225,6 @@ pub fn create_invoice_pdf(invoice: &Invoice) -> PdfDocumentReference {
 
     current_layer.begin_text_section();
     current_layer.set_font(&oswald, 10.0);
-    current_layer.set_text_cursor(Mm(140.0), Mm(y_tracker_mm));
     current_layer.set_fill_color(Color::Rgb(Rgb::new(0.0, 0.04, 0.0, None)));
 
     current_layer.use_text(
@@ -239,7 +253,7 @@ pub fn create_invoice_pdf(invoice: &Invoice) -> PdfDocumentReference {
     );
     y_tracker_mm -= 4.0;
     current_layer.use_text(
-        "F2F0601",
+        &invoice.number,
         font_size_details,
         details_x,
         Mm(y_tracker_mm),
@@ -343,9 +357,6 @@ pub fn create_invoice_pdf(invoice: &Invoice) -> PdfDocumentReference {
     y_tracker_mm = 267.0 - 12.0;
 
     current_layer.begin_text_section();
-    current_layer.set_text_cursor(Mm(140.0), Mm(y_tracker_mm));
-
-    current_layer.begin_text_section();
 
     current_layer.set_font(&oswald, 14.0);
     current_layer.set_text_cursor(Mm(10.0), Mm(y_tracker_mm));
@@ -392,7 +403,12 @@ pub fn create_invoice_pdf(invoice: &Invoice) -> PdfDocumentReference {
     add_total(&current_layer, &normal_roboto, y_tracker_mm, summary);
 
     let due_date = chrono::NaiveDate::parse_from_str(&invoice.due_date, "%Y-%m-%d").unwrap();
-    add_receiver(&current_layer, &normal_roboto, y_tracker_mm-30.0, due_date.format("%d %b %Y").to_string().as_str());
+    add_receiver(
+        &current_layer,
+        &normal_roboto,
+        y_tracker_mm - 30.0,
+        due_date.format("%d %b %Y").to_string().as_str(),
+    );
 
     doc
 }
@@ -561,7 +577,10 @@ pub async fn create_invoice_s3(invoice: &Invoice) -> Result<S3Object, Box<dyn st
     let doc = create_invoice_pdf(invoice);
 
     let bucket_name = "serverless-s3-dev-ftfbucket-xcri21szhuya";
-    let key = format!("{}.pdf", invoice.buyer.name);
+    let key = format!(
+        "Invoice {} for {} {}.pdf",
+        invoice.number, invoice.buyer.name, invoice.date
+    );
 
     let config = aws_config::load_from_env().await;
     let client = aws_sdk_s3::Client::new(&config);

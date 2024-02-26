@@ -35,7 +35,7 @@ cargo lambda invoke create_invoices --data-file example_json/invoices.json
 To deploy the lambdas, run:
 
 ```sh
-cargo lambda deploy
+cargo lambda deploy [binary]
 ```
 
 This will deploy the lambdas to AWS Lambda.
@@ -45,7 +45,7 @@ This will deploy the lambdas to AWS Lambda.
 To deploy the lambdas with a different profile, run:
 
 ```sh
-cargo lambda deploy --iam-role FULL_ROLE_ARN <binary>
+cargo lambda deploy --iam-role FULL_ROLE_ARN [binary]
 ```
 
 Use `arn:aws:iam::850434255294:role/s3-lambda-invoke` to invoke with s3.
