@@ -1,20 +1,22 @@
-- A summary of orders on one page for each week
-  - LMH
-    - Brighthampton,  Veg - -- detail & cost
-    - Bruern Farm , Venison ---- detail & cost
+# F2F
 
-- Ideally a single page on the end of the weekly spreadsheet (or as a separate document)
-- on spreadsheet - financial line totals for each item 
-  - Sandy Lane - Beetroot 5 kg x £1.95 = £9.75
-  - Sandy Lane - Carrots 10kg x £2.10. = £21.00
-- IDEALLY     a monthly summary by College & by Producer 
-- OR.    a weekly summary by College & by Producer
+Farm to Fork order and invoice generator.
 
+## Streamlit
 
-# Development
+The streamlit app accepts `.xlsx` files, parses the data and generate the PDFs via the lambda functions.
 
-## Resource and Lambda Functions
+To run the streamlit app, run:
 
+```sh
+streamlit run Home.py
 ```
-sls deploy
-```
+
+## Lambdas
+
+Two lambdas are defined in this project:
+
+- `create_invoices`: Generates PDF invoices from orders.
+- `create_orders`: Generates PDF orders from orders.
+
+Please see the README.md for details on how to run and deploy the lambdas.
