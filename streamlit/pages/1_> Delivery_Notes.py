@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import boto3
 import json
+import numpy as np
+import urllib.parse
 
 st.set_page_config(page_title="Delivery Notes Generator")
 
@@ -15,7 +17,9 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 st.title("Delivery Notes Generator")
 
-st.markdown("Upload weekly order excel and contacts CSV to generate delivery notes.")
+st.markdown("Upload weekly order excel and contacts CSV to generate delivery notes.\n"
+            "When the delivery notes are generated, you will be able to download them by clicking the link(s) below.")
+
 
 order_sheet = st.file_uploader("Choose Weekly Order Excel", type="xlsx", accept_multiple_files=False)
 contacts = st.file_uploader("Choose Contacts CSV", type="xlsx", accept_multiple_files=False)
@@ -24,6 +28,9 @@ dataframes = []
 if order_sheet and contacts:
     orders = pd.read_excel(order_sheet, header=2)
     contacts = pd.read_excel(contacts)
+
+    orders = orders.replace({np.nan: ""})
+    contacts = contacts.replace({np.nan: ""})
 
     # Remove rows with no produce name (i.e. nothing listed)
     orders = orders.dropna(subset=["Produce Name"])
@@ -64,6 +71,7 @@ if order_sheet and contacts:
         }
     )
 
+    orders["variant"] = orders["variant"].apply(lambda x: x[:25] + "..." if len(x) > 25 else x)
     orders["price"] = (orders["price"] * 100).astype(int)
 
     for buyer in buyers:
@@ -89,9 +97,9 @@ if order_sheet and contacts:
         if line["seller"] not in buyer_lines[line["buyer"]]:
             buyer_lines[line["buyer"]][line["seller"]] = []
         line_without_buyer = {k: v for k, v in line.items() if k not in ["buyer", "seller"]}
-        print("Adding", line_without_buyer, "to", line["buyer"], "from", line["seller"])
+        # print("Adding", line_without_buyer, "to", line["buyer"], "from", line["seller"])
         buyer_lines[line["buyer"]][line["seller"]].append(line_without_buyer)
-        print(buyer_lines[line["buyer"]])
+        # print(buyer_lines[line["buyer"]])
 
     orders = []
 
@@ -101,7 +109,6 @@ if order_sheet and contacts:
 
     final_data = {"orders": orders}
 
-    final_data
     invoice_data_json = json.dumps(final_data)
 
     Lambda = boto3.client('lambda', region_name="eu-west-2")
@@ -114,7 +121,11 @@ if order_sheet and contacts:
         # Qualifier='string'
     )
     result = json.loads(response['Payload'].read().decode('utf-8'))
-    result
+    i = 0
+    for link in result["links"]:
+        encoded_link = link.replace(" ", "%20")
+        st.markdown(f"[{buyers[i]} Delivery Notes]({encoded_link})")
+        i += 1
 else:
     st.warning("Please upload CSV file(s).")
     st.stop()
