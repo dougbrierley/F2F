@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import streamlit as st
+from datetime import datetime
 
 def orderify(orders):
     orders = orders.replace({np.nan: ""})
@@ -67,8 +68,6 @@ def contacts_formatter(contacts):
     )
     contacts = contacts[["name", "address1", "address2", "city", "postcode", "country", "number"]]
     contacts = contacts.dropna(subset=["name"])  # Remove rows with no value in the "name" column
-    
-    print(contacts)
     return contacts
 
 def add_delivery_fee(orders, delivery_fee, no_deliveries):
@@ -91,3 +90,14 @@ def contacts_checker(contacts, buyers):
         st.success("All buyers found in contacts")
         print("All buyers found in contacts") 
     return unmatched_buyers
+
+def extract_buyer_list(orders):
+    buyers_column_index = orders.columns.get_loc("BUYERS:")
+    buyers = orders.columns[buyers_column_index + 1:][orders.iloc[:, buyers_column_index + 1:].sum() > 0].tolist()
+    return buyers
+
+def date_extractor(order_sheet):
+    order_sheet = str(order_sheet)
+    date_str = order_sheet.split(" - ")[-1].split(".")[0]
+    dateobj = datetime.strptime(date_str, "%d_%m_%Y")
+    return dateobj

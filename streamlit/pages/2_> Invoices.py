@@ -2,8 +2,9 @@ import streamlit as st
 import pandas as pd
 import boto3
 import json
-from functions import orderify, contacts_formatter, contacts_checker
+from functions import orderify, contacts_formatter, contacts_checker, date_extractor
 import datetime
+from datetime import datetime, timedelta
 
 st.set_page_config(page_title="Invoice Generator")
 
@@ -21,24 +22,35 @@ st.markdown("Upload weekly order excel and contacts CSV to generate delivery not
 
 order_sheets = st.file_uploader("Choose Weekly Order Excels", type="xlsx", accept_multiple_files=True)
 contacts = st.file_uploader("Choose Contacts Excel", type="xlsx", accept_multiple_files=False)
+date = st.date_input("What's the Invoice date?")
+
 # contacts = "example_data/FarmToFork_Invoice_Contacts.xlsx"
 # order_sheets = ["example_data/OxFarmToFork spreadsheet week 7 - 12_02_2024.xlsx", "example_data/OxFarmToFork spreadsheet week 9 - 26_02_2024.xlsx"]
+file = "OxFarmToFork spreadsheet week 7 - 12_02_2024.xlsx"
 
-
-if order_sheets and contacts:
+if order_sheets and contacts and date:
     contacts = pd.read_excel(contacts)
     contacts = contacts_formatter(contacts)
-    invoice_data = []
-    date = "2024-10-10"
 
+    # Top of the invoice info
+    month = (date - timedelta(days=14)).strftime("%b") # Get the shortened month of the invoice
+    reference = f"F2F-{month}"
+    payment_terms = 14
+    due_date = (date + timedelta(days=payment_terms)).strftime("%Y-%m-%d")
+    date = date.strftime('%Y-%m-%d')
+
+
+    
+
+
+    invoice_data = []
     all_orders = pd.DataFrame()
     buyers = set()
 
     # Iterate through the order sheets, adding the orders to the all_orders dataframe
     for order_sheet in order_sheets:
         marketplace = pd.read_excel(order_sheet, sheet_name="GROWERS' PAGE", header=2)
-        # order_date = order_sheet.split(" - ")[1].split(".")[0]
-        order_date = "2024-10-10"
+        order_date = date_extractor(order_sheet)
         
         # Get the names of the buyers that made orders this week, using the "Buyers:" column as a marker
         buyers_column_index = marketplace.columns.get_loc("BUYERS:")
@@ -51,7 +63,7 @@ if order_sheets and contacts:
 
         orders = orderify(marketplace)
         # Make changes to match the invoice data structure
-        orders["date"] = order_date
+        orders["date"] = (order_date + timedelta(days=8)).strftime('%Y-%m-%d')
         all_orders = pd.concat([all_orders, orders], ignore_index=True)
     
     # Add the VAT rate to the orders
@@ -71,9 +83,9 @@ if order_sheets and contacts:
         lines = all_orders.loc[all_orders["buyer"] == buyer].drop("buyer", axis=1)
         lines = lines.to_dict("records")
         invoice_data.append({
-        "date": "2023-11-10",
-        "due_date": "2023-11-06",
-        "reference": "F2F-Jan",
+        "date": date,
+        "due_date": due_date,  # Add 14 days to the date
+        "reference": reference,
         "buyer": buyer_info,
         "lines": lines
         })
@@ -101,7 +113,7 @@ if order_sheets and contacts:
         i += 1
 
 else:
-    st.warning("Please upload CSV file(s).")
+    st.warning("Please upload Excel file(s).")
     st.stop()
 
 
