@@ -15,19 +15,11 @@
       },
       "lines": [
         {
-          "item": "Carrots",
-          "price": 199,
-          "qty": 2.5,
-          "vat_rate": 0.2,
-          "date": "07/02",
-          "seller": "Farm2Fork"
-        },
-        {
           "item": "Carrots 2",
           "price": 299,
           "qty": 1.0,
           "vat_rate": 0.2,
-          "date": "16/02",
+          "date": "2024-02-16",
           "seller": "John's Farm"
         },
         {
@@ -35,7 +27,7 @@
           "price": 399,
           "qty": 1.0,
           "vat_rate": 0,
-          "date": "16/02",
+          "date": "2024-02-16",
           "seller": "Farm2Fork"
         },
         {
@@ -43,7 +35,7 @@
           "price": 800,
           "qty": 3.0,
           "vat_rate": 0.2,
-          "date": "23/02",
+          "date": "2024-02-23",
           "seller": "Farm2Fork"
         },
         {
@@ -51,7 +43,7 @@
           "price": 150,
           "qty": 4.0,
           "vat_rate": 0.2,
-          "date": "23/02",
+          "date": "2024-02-23",
           "seller": "Happy Greens"
         },
         {
@@ -59,7 +51,7 @@
           "price": 249,
           "qty": 3.0,
           "vat_rate": 0.2,
-          "date": "23/02",
+          "date": "2024-02-23",
           "seller": "Farm2Fork"
         },
         {
@@ -67,7 +59,7 @@
           "price": 120,
           "qty": 2.0,
           "vat_rate": 0.2,
-          "date": "23/02",
+          "date": "2024-02-23",
           "seller": "Happy Greens"
         },
         {
@@ -75,15 +67,23 @@
           "price": 349,
           "qty": 1.5,
           "vat_rate": 0.2,
-          "date": "23/02",
+          "date": "2024-02-23",
           "seller": "Green Meadows"
+        },
+        {
+          "item": "Carrots",
+          "price": 199,
+          "qty": 2.5,
+          "vat_rate": 0.2,
+          "date": "2024-02-23",
+          "seller": "Farm2Fork"
         },
         {
           "item": "Bell Peppers",
           "price": 299,
           "qty": 2.0,
           "vat_rate": 0.2,
-          "date": "23/02",
+          "date": "2024-02-23",
           "seller": "Farm2Fork"
         },
         {
@@ -91,7 +91,7 @@
           "price": 79,
           "qty": 1.0,
           "vat_rate": 0.2,
-          "date": "23/02",
+          "date": "2024-02-02",
           "seller": "Happy Greens"
         },
         {
@@ -99,7 +99,7 @@
           "price": 499,
           "qty": 0.5,
           "vat_rate": 0.2,
-          "date": "23/02",
+          "date": "2024-02-23",
           "seller": "Green Meadows"
         },
         {
@@ -107,7 +107,7 @@
           "price": 199,
           "qty": 1.0,
           "vat_rate": 0.2,
-          "date": "24/02",
+          "date": "2024-02-24",
           "seller": "Farm2Fork"
         },
         {
@@ -115,7 +115,7 @@
           "price": 129,
           "qty": 3.0,
           "vat_rate": 0.2,
-          "date": "24/02",
+          "date": "2024-02-24",
           "seller": "Happy Greens"
         },
         {
@@ -123,7 +123,7 @@
           "price": 199,
           "qty": 4.0,
           "vat_rate": 0,
-          "date": "24/02",
+          "date": "2024-02-24",
           "seller": "Happy Greens"
         }
       ]

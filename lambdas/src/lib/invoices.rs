@@ -77,6 +77,7 @@ struct BuyerDetails {
     city: String,
     postcode: String,
     country: String,
+    number: String,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -85,9 +86,19 @@ pub struct Invoice {
     buyer: BuyerDetails,
     date: String,
     due_date: String,
-    number: String,
     reference: String,
     lines: Vec<InvoiceLine>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+/// An invoice for a buyer
+pub struct InvoiceLine {
+    item: String,
+    price: u32,
+    qty: f32,
+    vat_rate: f32,
+    date: String,
+    seller: String,
 }
 
 fn check_file_exists_and_is_json(file_path: &str) -> bool {
@@ -122,17 +133,6 @@ impl Invoice {
 
         invoices.invoices
     }
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-/// An invoice for a buyer
-pub struct InvoiceLine {
-    item: String,
-    price: u32,
-    qty: f32,
-    vat_rate: f32,
-    date: String,
-    grower: String,
 }
 
 fn add_table_header(current_layer: &PdfLayerReference, font: &IndirectFontRef, y_tracker_mm: f32) {
@@ -237,7 +237,7 @@ pub fn create_invoice_pdf(invoice: &Invoice) -> PdfDocumentReference {
     );
     y_tracker_mm -= 4.0;
     current_layer.use_text(
-        &invoice.date,
+        format_invoice_date(&invoice.date),
         font_size_details,
         details_x,
         Mm(y_tracker_mm),
@@ -254,7 +254,7 @@ pub fn create_invoice_pdf(invoice: &Invoice) -> PdfDocumentReference {
     );
     y_tracker_mm -= 4.0;
     current_layer.use_text(
-        &invoice.number,
+        &invoice.buyer.number,
         font_size_details,
         details_x,
         Mm(y_tracker_mm),
@@ -414,6 +414,16 @@ pub fn create_invoice_pdf(invoice: &Invoice) -> PdfDocumentReference {
     doc
 }
 
+fn format_line_date(date: &str) -> String {
+    let d = chrono::NaiveDate::parse_from_str(date, "%Y-%m-%d").unwrap();
+    d.format("%d/%m").to_string()
+}
+
+fn format_invoice_date(date: &str) -> String {
+    let d = chrono::NaiveDate::parse_from_str(date, "%Y-%m-%d").unwrap();
+    d.format("%d/%m/%Y").to_string()
+}
+
 fn add_invoice_line(
     current_layer: &PdfLayerReference,
     invoice_line: &InvoiceLine,
@@ -426,7 +436,7 @@ fn add_invoice_line(
 
     current_layer.begin_text_section();
     current_layer.use_text(
-        &invoice_line.date,
+        format_line_date(&invoice_line.date),
         font_size,
         Mm(10.0),
         Mm(y_tracker_mm),
@@ -470,19 +480,32 @@ fn add_invoice_line(
     current_layer.end_text_section();
 }
 
-fn group_by_grower(lines: &Vec<InvoiceLine>) -> std::collections::HashMap<&str, Vec<&InvoiceLine>> {
+fn date_as_value(date: &str) -> chrono::NaiveDate {
+    let d = chrono::NaiveDate::parse_from_str(date, "%Y-%m-%d").unwrap();
+    d
+}
+
+fn order_invoice_lines_by_date(lines: &mut Vec<&InvoiceLine>) {
+    lines.sort_by(|a, b| date_as_value(a.date.as_str()).cmp(&date_as_value(b.date.as_str())));
+}
+
+fn group_by_seller(lines: &Vec<InvoiceLine>) -> std::collections::HashMap<&str, Vec<&InvoiceLine>> {
     let mut grouped = std::collections::HashMap::new();
 
     for line in lines {
-        let grower = line.grower.split_whitespace().next().unwrap();
-        let entry = grouped.entry(grower).or_insert(Vec::new());
+        let seller = line.seller.split_whitespace().next().unwrap();
+        let entry = grouped.entry(seller).or_insert(Vec::new());
         entry.push(line);
+    }
+
+    for (_, lines) in &mut grouped {
+        order_invoice_lines_by_date(lines);
     }
 
     grouped
 }
 
-fn total_per_grower_in_order(lines: &Vec<&InvoiceLine>) -> u32 {
+fn total_per_seller_in_invoice(lines: &Vec<&InvoiceLine>) -> u32 {
     let mut total = 0;
 
     for line in lines {
@@ -500,13 +523,13 @@ fn add_invoice_lines_to_pdf(
 ) {
     *y_tracker_mm -= 7.0;
 
-    let grouped = group_by_grower(invoice_lines);
+    let grouped = group_by_seller(invoice_lines);
 
     for (grower, lines) in grouped {
         *y_tracker_mm -= 3.0;
         current_layer.use_text(grower, 12.0, Mm(10.0), Mm(*y_tracker_mm), font);
         current_layer.use_text(
-            format_currency(total_per_grower_in_order(&lines)),
+            format_currency(total_per_seller_in_invoice(&lines)),
             12.0,
             Mm(180.0),
             Mm(*y_tracker_mm),
@@ -520,7 +543,6 @@ fn add_invoice_lines_to_pdf(
             *y_tracker_mm -= 6.0;
         }
     }
-
 }
 
 struct InvoiceSummary {
@@ -619,7 +641,7 @@ pub async fn create_invoice_s3(invoice: &Invoice) -> Result<S3Object, Box<dyn st
     let bucket_name = "serverless-s3-dev-ftfbucket-xcri21szhuya";
     let key = format!(
         "Invoice {} for {} {}.pdf",
-        invoice.number, invoice.buyer.name, invoice.date
+        invoice.buyer.number, invoice.buyer.name, invoice.date
     );
 
     let config = aws_config::load_from_env().await;
