@@ -1,48 +1,58 @@
 {
   "orders": [
     {
-      "buyer": "John Doe",
-      "lines": {
-        "Big Vec Dude": [
-          {
-            "produce": "Carrots",
-            "variant": "Orange",
-            "unit": "lb",
-            "price": 199,
-            "qty": 2.0
-          },
-          {
-            "produce": "Carrots",
-            "variant": "Purple",
-            "unit": "lb",
-            "price": 299,
-            "qty": 1.5
-          },
-          {
-            "produce": "Broccoli",
-            "variant": "",
-            "unit": "lb",
-            "price": 399,
-            "qty": 1.0
-          }
-        ],
-        "Another Seller": [
-          {
-            "produce": "Wheat",
-            "variant": "Lots of them",
-            "unit": "kg",
-            "price": 200,
-            "qty": 2.5
-          },
-          {
-            "produce": "Wheat",
-            "variant": "Yeo",
-            "unit": "kg",
-            "price": 500,
-            "qty": 4.5
-          }
-        ]
-      }
+      "date": "2019-01-01",
+      "buyer": {
+        "name": "John Doe",
+        "address1": "1234 Main St",
+        "address2": "Apt 123",
+        "city": "Springfield",
+        "postcode": "62701",
+        "country": "USA",
+        "number": "VCC1812"
+      },
+      "lines": [
+        {
+          "produce": "Carrots",
+          "variant": "Orange",
+          "unit": "lb",
+          "price": 199,
+          "qty": 2.0,
+          "seller": "Big Vec Dude"
+        },
+        {
+          "produce": "Carrots",
+          "variant": "Purple",
+          "unit": "lb",
+          "price": 299,
+          "qty": 1.5,
+          "seller": "Big Vec Dude"
+        },
+        {
+          "produce": "Broccoli",
+          "variant": "",
+          "unit": "lb",
+          "price": 399,
+          "qty": 1.0,
+          "seller": "Big Vec Dude"
+        },
+        {
+          "produce": "Wheat",
+          "variant": "Lots of them",
+          "unit": "kg",
+          "price": 200,
+          "qty": 2.5,
+          "seller": "Large Seller"
+        },
+        {
+          "produce": "Wheat",
+          "variant": "Yeo",
+          "unit": "kg",
+          "price": 500,
+          "qty": 4.5,
+          "seller": "Large Seller"
+        }
+      ]
     }
   ]
 }

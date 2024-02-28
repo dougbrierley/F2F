@@ -3,7 +3,6 @@
     {
       "date": "2024-02-28",
       "due_date": "2024-03-14",
-      "number": "VCC1812",
       "reference": "Farm2Fork January",
       "buyer": {
         "name": "Big Man",
@@ -11,7 +10,8 @@
         "address2": "Apt 123",
         "city": "Springfield",
         "postcode": "62701",
-        "country": "USA"
+        "country": "USA",
+        "number": "VCC1812"
       },
       "lines": [
         {
@@ -19,28 +19,112 @@
           "price": 199,
           "qty": 2.5,
           "vat_rate": 0.2,
-          "date": "07/02"
+          "date": "07/02",
+          "seller": "Farm2Fork"
         },
         {
           "item": "Carrots 2",
           "price": 299,
           "qty": 1.0,
           "vat_rate": 0.2,
-          "date": "16/02"
+          "date": "16/02",
+          "seller": "John's Farm"
         },
         {
           "item": "Carrots",
           "price": 399,
           "qty": 1.0,
           "vat_rate": 0,
-          "date": "16/02"
+          "date": "16/02",
+          "seller": "Farm2Fork"
         },
         {
           "item": "Delivery Fee",
           "price": 800,
           "qty": 3.0,
           "vat_rate": 0.2,
-          "date": "23/02"
+          "date": "23/02",
+          "seller": "Farm2Fork"
+        },
+        {
+          "item": "Lettuce",
+          "price": 150,
+          "qty": 4.0,
+          "vat_rate": 0.2,
+          "date": "23/02",
+          "seller": "Happy Greens"
+        },
+        {
+          "item": "Potatoes",
+          "price": 249,
+          "qty": 3.0,
+          "vat_rate": 0.2,
+          "date": "23/02",
+          "seller": "Farm2Fork"
+        },
+        {
+          "item": "Onions",
+          "price": 120,
+          "qty": 2.0,
+          "vat_rate": 0.2,
+          "date": "23/02",
+          "seller": "Happy Greens"
+        },
+        {
+          "item": "Tomatoes",
+          "price": 349,
+          "qty": 1.5,
+          "vat_rate": 0.2,
+          "date": "23/02",
+          "seller": "Green Meadows"
+        },
+        {
+          "item": "Bell Peppers",
+          "price": 299,
+          "qty": 2.0,
+          "vat_rate": 0.2,
+          "date": "23/02",
+          "seller": "Farm2Fork"
+        },
+        {
+          "item": "Garlic",
+          "price": 79,
+          "qty": 1.0,
+          "vat_rate": 0.2,
+          "date": "23/02",
+          "seller": "Happy Greens"
+        },
+        {
+          "item": "Strawberries",
+          "price": 499,
+          "qty": 0.5,
+          "vat_rate": 0.2,
+          "date": "23/02",
+          "seller": "Green Meadows"
+        },
+        {
+          "item": "Carrots",
+          "price": 199,
+          "qty": 1.0,
+          "vat_rate": 0.2,
+          "date": "24/02",
+          "seller": "Farm2Fork"
+        },
+        {
+          "item": "Spinach",
+          "price": 129,
+          "qty": 3.0,
+          "vat_rate": 0.2,
+          "date": "24/02",
+          "seller": "Happy Greens"
+        },
+        {
+          "item": "Apples",
+          "price": 199,
+          "qty": 4.0,
+          "vat_rate": 0,
+          "date": "24/02",
+          "seller": "Happy Greens"
         }
       ]
     }

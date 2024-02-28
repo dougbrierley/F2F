@@ -132,6 +132,7 @@ pub struct InvoiceLine {
     qty: f32,
     vat_rate: f32,
     date: String,
+    grower: String,
 }
 
 fn add_table_header(current_layer: &PdfLayerReference, font: &IndirectFontRef, y_tracker_mm: f32) {
@@ -469,6 +470,28 @@ fn add_invoice_line(
     current_layer.end_text_section();
 }
 
+fn group_by_grower(lines: &Vec<InvoiceLine>) -> std::collections::HashMap<&str, Vec<&InvoiceLine>> {
+    let mut grouped = std::collections::HashMap::new();
+
+    for line in lines {
+        let grower = line.grower.split_whitespace().next().unwrap();
+        let entry = grouped.entry(grower).or_insert(Vec::new());
+        entry.push(line);
+    }
+
+    grouped
+}
+
+fn total_per_grower_in_order(lines: &Vec<&InvoiceLine>) -> u32 {
+    let mut total = 0;
+
+    for line in lines {
+        total += (line.qty * line.price as f32) as u32;
+    }
+
+    total
+}
+
 fn add_invoice_lines_to_pdf(
     current_layer: &PdfLayerReference,
     font: &IndirectFontRef,
@@ -477,10 +500,27 @@ fn add_invoice_lines_to_pdf(
 ) {
     *y_tracker_mm -= 7.0;
 
-    for line in invoice_lines {
-        add_invoice_line(current_layer, line, font, *y_tracker_mm);
+    let grouped = group_by_grower(invoice_lines);
+
+    for (grower, lines) in grouped {
+        *y_tracker_mm -= 3.0;
+        current_layer.use_text(grower, 12.0, Mm(10.0), Mm(*y_tracker_mm), font);
+        current_layer.use_text(
+            format_currency(total_per_grower_in_order(&lines)),
+            12.0,
+            Mm(180.0),
+            Mm(*y_tracker_mm),
+            font,
+        );
+        *y_tracker_mm -= 1.0;
+        add_hr(current_layer, *y_tracker_mm, 0.5);
         *y_tracker_mm -= 6.0;
+        for line in lines {
+            add_invoice_line(current_layer, line, font, *y_tracker_mm);
+            *y_tracker_mm -= 6.0;
+        }
     }
+
 }
 
 struct InvoiceSummary {
