@@ -34,6 +34,7 @@ if order_sheet and contacts:
     contacts = contacts.replace({np.nan: ""})
 
     my_order_lines = orderify(orders)
+    my_order_lines = my_order_lines.to_dict(orient="records")
 
     # Get the names of the buyers that made orders this week
     buyers = orders.columns[9:][orders.iloc[:, 9:].sum() > 0].tolist()

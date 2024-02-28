@@ -10,7 +10,8 @@ def orderify(orders):
     orders = orders.loc[(orders.iloc[:, 9:].sum(axis=1) != 0)]
 
     # Get the names of the buyers that made orders this week
-    buyers = orders.columns[9:][orders.iloc[:, 9:].sum() > 0].tolist()
+    buyers_column_index = orders.columns.get_loc("BUYERS:")
+    buyers = orders.columns[buyers_column_index + 1:][orders.iloc[:, buyers_column_index + 1:].sum() > 0].tolist()
 
     if not buyers:
         print("No buyers this week")
@@ -22,7 +23,7 @@ def orderify(orders):
         "Additional Info": "variant",
         "UNIT": "unit",
         "Price/   UNIT (£)": "price",
-        "Growers": "seller",
+        "Growers": "seller"
     })
 
     orders["variant"] = orders["variant"].apply(lambda x: x[:25] + "..." if len(x) > 25 else x)
@@ -41,4 +42,27 @@ def orderify(orders):
         for line in buyer_lines:
             my_order_lines.append(line)
 
+    my_order_lines = pd.DataFrame(my_order_lines)
+    
     return my_order_lines  
+
+def contacts_formatter(contacts):
+    contacts = contacts.rename(
+        columns={
+            "Buyer": "name",
+            "Address Line 1": "address1",
+            "Address Line 2": "adress2",
+            "City": "city",
+            "Postcode": "postcode",
+            "City": "city",
+            "Country": "country",
+        }
+    )
+
+    return contacts.to_dict(orient="records")
+
+def add_delivery_fee(orders, delivery_fee, no_deliveries):
+    for order in orders:
+        order.lines
+
+    return orders
