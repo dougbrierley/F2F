@@ -4,3 +4,6 @@
 **/*.DS_Store
 
 !example.pdf
+example_json/*.json
+!example_json/invoices.json
+!example_json/orders.json

@@ -24,6 +24,7 @@ tracing-subscriber = "0.3.17"
 serde_json = "1.0.114"
 serde = "1.0.197"
 aws-sdk-s3 = "1.16.0"
+zip = "0.6.6"
 
 [lib]
 name="f2f"
@@ -37,3 +38,6 @@ path="src/bin/orders.rs"
 name="create_invoices"
 path="src/bin/invoices.rs"
 
+[[bin]]
+name="zipper"
+path="src/bin/zipper.rs"
