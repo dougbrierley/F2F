@@ -26,28 +26,32 @@ pub async fn zip_keys(
     let client = aws_sdk_s3::Client::new(&config);
 
     let zip_name = "test_invoices.zip";
-    let mut zip = zip::ZipWriter::new(std::fs::File::create(zip_name).unwrap());
+    // let mut zip = zip::ZipWriter::new(std::fs::File::create(zip_name).unwrap());
+    let mut inner: Vec<u8> = Vec::new();
 
-    for key in keys {
-        zip.start_file(key.to_string(), Default::default()).unwrap();
-        let mut bytes = download_invoice_s3(&key.to_string(), bucket, &client)
-            .await
-            .unwrap();
-        // let data = bytes.collect().await.unwrap().into_bytes();
-        while let Some(bytes) = bytes.try_next().await.unwrap() {
-            zip.write_all(&bytes).unwrap();
+    {
+        let mut zip = zip::ZipWriter::new(std::io::Cursor::new(&mut inner));
+
+        for key in keys {
+            zip.start_file(key.to_string(), Default::default()).unwrap();
+            let mut bytes = download_invoice_s3(&key.to_string(), bucket, &client)
+                .await
+                .unwrap();
+            // let data = bytes.collect().await.unwrap().into_bytes();
+            while let Some(bytes) = bytes.try_next().await.unwrap() {
+                zip.write_all(&bytes).unwrap();
+            }
         }
+
+        zip.finish().unwrap();
     }
 
-    zip.finish().unwrap();
-
-    let bytes = std::fs::read(zip_name).unwrap();
-    upload_object(&client, bytes, bucket, zip_name)
+    upload_object(&client, inner, bucket, zip_name)
         .await
         .unwrap();
     println!("Uploaded zip");
 
-    std::fs::remove_file(zip_name).unwrap();
+    // std::fs::remove_file(zip_name).unwrap();
 
     Ok(generate_link(&S3Object::new(
         zip_name.to_string(),
