@@ -93,9 +93,3 @@ if order_sheet and contacts:
 else:
     st.warning("Please upload CSV file(s).")
     st.stop()
-
-
-st.markdown("")
-st.markdown("---")
-st.markdown("")
-st.markdown("<p style='text-align: center'><a href='https://github.com/Kaludii'>Github</a> | <a href='https://huggingface.co/Kaludi'>HuggingFace</a></p>", unsafe_allow_html=True)
