@@ -6,7 +6,7 @@ use std::fs::{self, File};
 use std::io::BufWriter;
 
 use crate::pdf::{add_hr, add_hr_width};
-use crate::utils::{format_currency, generate_link, upload_object, vat_rate_string, S3Object};
+use crate::utils::{format_currency, generate_link, upload_object, vat_rate_string, BuyerDetails, S3Object};
 
 use std::include_bytes;
 use std::path::Path;
@@ -70,17 +70,6 @@ const FONT_BYTES_ROBOTO_REG: &[u8] = include_bytes!("../../assets/fonts/Roboto-R
 const FONT_BYTES_OSWALD: &[u8] = include_bytes!("../../assets/fonts/Oswald-Medium.ttf");
 
 #[derive(Debug, Deserialize, Serialize)]
-struct BuyerDetails {
-    name: String,
-    address1: String,
-    address2: Option<String>,
-    city: String,
-    postcode: String,
-    country: String,
-    number: String,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
 /// An order for a buyer along with a hashmap of produce and order lines.
 pub struct Invoice {
     buyer: BuyerDetails,
@@ -141,6 +130,7 @@ fn add_table_header(current_layer: &PdfLayerReference, font: &IndirectFontRef, y
     add_hr(current_layer, y_tracker_mm + 6.0, 1.0);
 
     current_layer.begin_text_section();
+    current_layer.use_text("DATE", font_size, Mm(10.0), Mm(y_tracker_mm), &font);
     current_layer.use_text("ITEM", font_size, Mm(25.0), Mm(y_tracker_mm), &font);
     current_layer.use_text("QTY", font_size, Mm(120.0), Mm(y_tracker_mm), &font);
     current_layer.use_text("PRICE", font_size, Mm(140.0), Mm(y_tracker_mm), &font);
@@ -215,7 +205,7 @@ pub fn create_invoice_pdf(invoice: &Invoice) -> PdfDocumentReference {
     current_layer.set_word_spacing(0.0);
     current_layer.set_character_spacing(0.0);
 
-    current_layer.use_text("TAX INVOICE", 46.0, Mm(10.0), Mm(267.0), &oswald);
+    current_layer.use_text("VAT INVOICE", 46.0, Mm(10.0), Mm(267.0), &oswald);
 
     y_tracker_mm -= 11.0;
 

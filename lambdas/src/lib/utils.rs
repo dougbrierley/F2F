@@ -4,6 +4,7 @@ use s3::error::SdkError;
 use s3::operation::put_object::PutObjectError;
 use s3::operation::put_object::PutObjectOutput;
 use s3::primitives::ByteStream;
+use serde::{Serialize, Deserialize};
 pub struct S3Object {
   key: String,
   bucket: String,
@@ -13,6 +14,17 @@ impl S3Object {
   pub fn new(key: String, bucket: String) -> Self {
       S3Object { key, bucket }
   }
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct BuyerDetails {
+    pub name: String,
+    pub address1: String,
+    pub address2: Option<String>,
+    pub city: String,
+    pub postcode: String,
+    pub country: String,
+    pub number: String,
 }
 
 pub fn format_currency(pence: u32) -> String {

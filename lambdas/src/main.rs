@@ -1,5 +1,5 @@
 use clap::{Args, Parser, Subcommand};
-use f2f::{invoices::{create_invoices, read_invoice_files, Invoice}, orders::create_orders};
+use f2f::invoices::{create_invoices, read_invoice_files, Invoice};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -11,19 +11,19 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Generates orders from given file
-    Order(OrderArgs),
+    // /// Generates orders from given file
+    // Order(OrderArgs),
     /// Generates invoice for given month
     Invoice(InvoiceArgs),
     /// Generates invoices from json file
     InvoiceDev(InvoiceDevArgs),
 }
 
-#[derive(Args)]
-struct OrderArgs {
-    /// File that you want to generate orders from
-    file: Option<std::path::PathBuf>,
-}
+// #[derive(Args)]
+// struct OrderArgs {
+//     /// File that you want to generate orders from
+//     file: Option<std::path::PathBuf>,
+// }
 
 #[derive(Args)]
 pub struct InvoiceArgs {
@@ -42,14 +42,14 @@ fn main() {
     let cli = Cli::parse();
 
     match &cli.command {
-        Commands::Order(path) => {
-            let path = match path.file.clone() {
-                Some(p) => p,
-                None => panic!("No file provided"),
-            };
-            let _ = create_orders(path);
-            println!("Orders generated");
-        }
+        // Commands::Order(path) => {
+        //     let path = match path.file.clone() {
+        //         Some(p) => p,
+        //         None => panic!("No file provided"),
+        //     };
+        //     let _ = create_orders(path);
+        //     println!("Orders generated");
+        // }
         Commands::Invoice(args) => {
             let month = match args.month.clone() {
                 Some(m) => {
