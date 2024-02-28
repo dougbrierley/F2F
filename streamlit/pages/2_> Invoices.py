@@ -19,6 +19,7 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 st.title("Invoice Generator")
 
 st.markdown("Upload weekly order excel and contacts CSV to generate delivery notes.")
+st.markdown("Uploaded spreadsheets must be named exactly as e.g.: OxFarmToFork spreadsheet week 7 - 12_02_2024.xlsx")
 
 order_sheets = st.file_uploader("Choose Weekly Order Excels", type="xlsx", accept_multiple_files=True)
 contacts = st.file_uploader("Choose Contacts Excel", type="xlsx", accept_multiple_files=False)

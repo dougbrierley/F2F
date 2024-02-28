@@ -19,8 +19,9 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 st.title("Delivery Notes Generator")
 
-st.markdown("Upload weekly order excel and contacts CSV to generate delivery notes.\n"
+st.markdown("Upload weekly order Excel and contacts Excel to generate delivery notes.\n"
             "When the delivery notes are generated, you will be able to download them by clicking the link(s) below.")
+st.markdown("Uploaded spreadsheets must be named exactly as e.g.: OxFarmToFork spreadsheet week 7 - 12_02_2024.xlsx")
 
 
 order_sheet = st.file_uploader("Choose Weekly Order Excel", type="xlsx", accept_multiple_files=False)
