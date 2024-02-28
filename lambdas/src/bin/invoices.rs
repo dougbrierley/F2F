@@ -32,5 +32,6 @@ async fn func(event: LambdaEvent<Incoming>) -> Result<Value, Error> {
             panic!("Error: {}", e)
         }
     };
+
     Ok(json!({ "message": format!("Generated {} new invoices.", links.len()), "links": links }))
 }

@@ -6,7 +6,9 @@ use std::fs::{self, File};
 use std::io::BufWriter;
 
 use crate::pdf::{add_hr, add_hr_width};
-use crate::utils::{format_currency, generate_link, upload_object, vat_rate_string, BuyerDetails, S3Object};
+use crate::utils::{
+    format_currency, generate_link, upload_object, vat_rate_string, BuyerDetails, S3Object,
+};
 
 use std::include_bytes;
 use std::path::Path;
