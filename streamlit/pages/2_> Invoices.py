@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import boto3
 import json
-from functions import orderify, contacts_formatter
+from functions import orderify, contacts_formatter, contacts_checker
 import datetime
 
 st.set_page_config(page_title="Invoice Generator")
@@ -19,63 +19,87 @@ st.title("Invoice Generator")
 
 st.markdown("Upload weekly order excel and contacts CSV to generate delivery notes.")
 
-# order_sheets = st.file_uploader("Choose Weekly Order Excels", type="xlsx", accept_multiple_files=True)
-# contacts = st.file_uploader("Choose Contacts Excel", type="xlsx", accept_multiple_files=False)
-contacts = "example_data/FarmToFork_Invoice_Contacts.xlsx"
-order_sheets = ["example_data/Farm to Fork Spreadsheet Week 43 - 23_10_2023.xlsx", "example_data/Farm to Fork Spreadsheet Week 44 - 30_10_2023.xlsx"]
+order_sheets = st.file_uploader("Choose Weekly Order Excels", type="xlsx", accept_multiple_files=True)
+contacts = st.file_uploader("Choose Contacts Excel", type="xlsx", accept_multiple_files=False)
+# contacts = "example_data/FarmToFork_Invoice_Contacts.xlsx"
+# order_sheets = ["example_data/OxFarmToFork spreadsheet week 7 - 12_02_2024.xlsx", "example_data/OxFarmToFork spreadsheet week 9 - 26_02_2024.xlsx"]
 
 
 if order_sheets and contacts:
     contacts = pd.read_excel(contacts)
     contacts = contacts_formatter(contacts)
-    all_orders = []
+    invoice_data = []
+    date = "2024-10-10"
 
+    all_orders = pd.DataFrame()
+    buyers = set()
+
+    # Iterate through the order sheets, adding the orders to the all_orders dataframe
     for order_sheet in order_sheets:
-        marketplace = pd.read_excel(order_sheet, header=2)
-        order_date = order_sheet.split(" - ")[1].split(".")[0]
+        marketplace = pd.read_excel(order_sheet, sheet_name="GROWERS' PAGE", header=2)
+        # order_date = order_sheet.split(" - ")[1].split(".")[0]
+        order_date = "2024-10-10"
         
         # Get the names of the buyers that made orders this week, using the "Buyers:" column as a marker
         buyers_column_index = marketplace.columns.get_loc("BUYERS:")
-        buyers = marketplace.columns[buyers_column_index + 1:][marketplace.iloc[:, buyers_column_index + 1:].sum() > 0].tolist()
+        new_buyers = marketplace.columns[buyers_column_index + 1:][marketplace.iloc[:, buyers_column_index + 1:].sum() > 0].tolist()
+        buyers.update(new_buyers)  # Update buyers with new_buyers
 
-        if not buyers:
+        if not new_buyers:
             st.write("No buyers this week")
             continue
 
         orders = orderify(marketplace)
+        # Make changes to match the invoice data structure
+        orders["date"] = order_date
+        all_orders = pd.concat([all_orders, orders], ignore_index=True)
+    
+    # Add the VAT rate to the orders
+    all_orders["vat_rate"] = 0.2
 
-        buyer_lines = {}
+    # Add the item column to the orders
+    all_orders["item"] = all_orders["produce"] + " - " + all_orders["variant"]
+    columns_to_drop = ["unit", "produce", "variant"]
+    all_orders = all_orders.drop(columns_to_drop, axis=1)
 
-        for line in orders:
-            if line["buyer"] not in buyer_lines or not isinstance(buyer_lines[line["buyer"]], dict):
-                buyer_lines[line["buyer"]] = {}
-            if line["seller"] not in buyer_lines[line["buyer"]]:
-                buyer_lines[line["buyer"]][line["seller"]] = []
-            line_without_buyer = {k: v for k, v in line.items() if k not in ["buyer", "seller"]}
-            # print("Adding", line_without_buyer, "to", line["buyer"], "from", line["seller"])
-            buyer_lines[line["buyer"]][line["seller"]].append(line_without_buyer)
-            # print(buyer_lines[line["buyer"]])
+    # Check for unmatched buyers
+    unmatched_buyers = contacts_checker(contacts["name"], buyers)
 
-        for buyer, seller_lines in buyer_lines.items():
-            orders.append({"buyer": buyer, "lines": seller_lines})
+    # Iterate through the buyers and create the invoice data
+    for buyer in buyers:
+        buyer_info = contacts.loc[contacts["name"] == buyer].to_dict("records")[0]
+        lines = all_orders.loc[all_orders["buyer"] == buyer].drop("buyer", axis=1)
+        lines = lines.to_dict("records")
+        invoice_data.append({
+        "date": "2023-11-10",
+        "due_date": "2023-11-06",
+        "reference": "F2F-Jan",
+        "buyer": buyer_info,
+        "lines": lines
+        })
+
+    final_data = {"invoices": invoice_data}
+    invoice_data_json = json.dumps(final_data)
 
 
-        final_data = {"orders": orders}
-        final_data
+    Lambda = boto3.client('lambda', region_name="eu-west-2")
+    response = Lambda.invoke(
+        FunctionName='arn:aws:lambda:eu-west-2:850434255294:function:create_invoices',
+        InvocationType='RequestResponse',
+        LogType='Tail',
+        # ClientContext='str_jsoning',
+        Payload=invoice_data_json,
+        # Qualifier='string'
+    )
+    result = json.loads(response['Payload'].read().decode('utf-8'))
+    
+    i = 0
+    buyers = list(buyers)
+    for link in result["links"]:
+        encoded_link = link.replace(" ", "%20")
+        st.markdown(f"[{buyers[i]} Invoice]({encoded_link})")
+        i += 1
 
-        # invoice_data_json = json.dumps(final_data)
-
-        # Lambda = boto3.client('lambda', region_name="eu-west-2")
-        # response = Lambda.invoke(
-        #     FunctionName='arn:aws:lambda:eu-west-2:850434255294:function:create_invoices',
-        #     InvocationType='RequestResponse',
-        #     LogType='Tail',
-        #     # ClientContext='str_jsoning',
-        #     Payload=invoice_data_json,
-        #     # Qualifier='string'
-        # )
-        # result = json.loads(response['Payload'].read().decode('utf-8'))
-        # result
 else:
     st.warning("Please upload CSV file(s).")
     st.stop()

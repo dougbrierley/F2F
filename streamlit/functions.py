@@ -1,16 +1,21 @@
 import numpy as np
 import pandas as pd
+import streamlit as st
 
 def orderify(orders):
     orders = orders.replace({np.nan: ""})
 
     orders = orders.dropna(subset=["Produce Name"])
 
+    # Get the names of the buyers that made orders this week
+    buyers_column_index = orders.columns.get_loc("BUYERS:")
+    # Replace empty string values with 0
+    orders.iloc[:, buyers_column_index + 1:] = orders.iloc[:, buyers_column_index + 1:].replace({"":0})
+    
+
     # Remove rows where the sum of columns 9 onwards (the buyers area) is equal to 0
     orders = orders.loc[(orders.iloc[:, 9:].sum(axis=1) != 0)]
 
-    # Get the names of the buyers that made orders this week
-    buyers_column_index = orders.columns.get_loc("BUYERS:")
     buyers = orders.columns[buyers_column_index + 1:][orders.iloc[:, buyers_column_index + 1:].sum() > 0].tolist()
 
     if not buyers:
@@ -23,7 +28,7 @@ def orderify(orders):
         "Additional Info": "variant",
         "UNIT": "unit",
         "Price/   UNIT (£)": "price",
-        "Growers": "seller"
+        "Growers": "seller",
     })
 
     orders["variant"] = orders["variant"].apply(lambda x: x[:25] + "..." if len(x) > 25 else x)
@@ -47,22 +52,42 @@ def orderify(orders):
     return my_order_lines  
 
 def contacts_formatter(contacts):
+    contacts = contacts.replace({np.nan: ""})
     contacts = contacts.rename(
         columns={
             "Buyer": "name",
             "Address Line 1": "address1",
-            "Address Line 2": "adress2",
+            "Address Line 2": "address2",
             "City": "city",
             "Postcode": "postcode",
             "City": "city",
             "Country": "country",
+            "Invoice Number": "number"
         }
     )
-
-    return contacts.to_dict(orient="records")
+    contacts = contacts[["name", "address1", "address2", "city", "postcode", "country", "number"]]
+    contacts = contacts.dropna(subset=["name"])  # Remove rows with no value in the "name" column
+    
+    print(contacts)
+    return contacts
 
 def add_delivery_fee(orders, delivery_fee, no_deliveries):
     for order in orders:
         order.lines
 
     return orders
+
+def contacts_checker(contacts, buyers):
+    unmatched_buyers = []
+    for buyer in buyers:
+        if buyer not in contacts.tolist():
+            print(f"Buyer {buyer} not found in contacts")
+            unmatched_buyers.append(buyer)
+    if unmatched_buyers:
+        st.warning(f"Buyers: {unmatched_buyers} not found in contacts spreadsheet")
+        print(f"Buyers: {unmatched_buyers} not found in contacts spreadsheet")
+        st.stop()
+    else:
+        st.success("All buyers found in contacts")
+        print("All buyers found in contacts") 
+    return unmatched_buyers

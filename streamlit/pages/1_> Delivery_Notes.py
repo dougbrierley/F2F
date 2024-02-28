@@ -24,7 +24,7 @@ st.markdown("Upload weekly order excel and contacts CSV to generate delivery not
 
 order_sheet = st.file_uploader("Choose Weekly Order Excel", type="xlsx", accept_multiple_files=False)
 contacts = st.file_uploader("Choose Contacts CSV", type="xlsx", accept_multiple_files=False)
-dataframes = []
+
 
 if order_sheet and contacts:
     orders = pd.read_excel(order_sheet, header=2)
@@ -37,7 +37,8 @@ if order_sheet and contacts:
     my_order_lines = my_order_lines.to_dict(orient="records")
 
     # Get the names of the buyers that made orders this week
-    buyers = orders.columns[9:][orders.iloc[:, 9:].sum() > 0].tolist()
+    buyers_column_index = orders.columns.get_loc("BUYERS:")
+    buyers = orders.columns[buyers_column_index + 1:][orders.iloc[:, buyers_column_index + 1:].sum() > 0].tolist()
 
     contacts = contacts.rename(
         columns={
@@ -85,6 +86,7 @@ if order_sheet and contacts:
         # Qualifier='string'
     )
     result = json.loads(response['Payload'].read().decode('utf-8'))
+    print(result)
     i = 0
     for link in result["links"]:
         encoded_link = link.replace(" ", "%20")
