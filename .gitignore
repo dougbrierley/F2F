@@ -2,7 +2,11 @@
 /.vscode
 **/.serverless
 **/node_modules
+<<<<<<< HEAD
 .venv
 .env
 *.json
 **/.venv
+=======
+**/.venv
+>>>>>>> main
