@@ -90,12 +90,28 @@ if order_sheet and contacts and date:
         # Qualifier='string'
     )
     result = json.loads(response['Payload'].read().decode('utf-8'))
-    print(result)
+
     i = 0
     for link in result["links"]:
         encoded_link = link.replace(" ", "%20")
         st.markdown(f"[{buyers[i]} Delivery Notes]({encoded_link})")
         i += 1
+    
+    links_data = {"links": result["links"],
+                  "name": f"{date.strftime('%Y-%m-%d')} Delivery Notes"}
+    links_json = json.dumps(links_data)
+    zip = Lambda.invoke(
+        FunctionName='arn:aws:lambda:eu-west-2:850434255294:function:zipper',
+        InvocationType='RequestResponse',
+        LogType='Tail',
+        # ClientContext='str_jsoning',
+        Payload=links_json,
+        # Qualifier='string'      
+    )
+    zip = json.loads(zip['Payload'].read().decode('utf-8'))
+    encoded_link = zip["zip"].replace(" ", "%20")
+    st.link_button("Download All Notes", encoded_link)
+
 else:
     st.warning("Please upload Excel files and select a date.")
     st.stop()

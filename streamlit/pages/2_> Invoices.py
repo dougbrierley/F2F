@@ -6,7 +6,7 @@ from functions import orderify, contacts_formatter, contacts_checker, date_extra
 import datetime
 from datetime import datetime, timedelta
 
-st.set_page_config(page_title="Invoice Generator")
+st.set_page_config(page_title="WORK IN PROGRESS - Invoice Generator")
 
 hide_streamlit_style = """
             <style>
