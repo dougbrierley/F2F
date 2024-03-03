@@ -7,7 +7,7 @@ use std::io::BufWriter;
 
 use crate::pdf::{add_hr, add_hr_width};
 use crate::utils::{
-    format_currency, generate_link, upload_object, vat_rate_string, BuyerDetails, S3Object,
+    check_file_exists_and_is_json, format_currency, generate_link, upload_object, vat_rate_string, BuyerDetails, S3Object
 };
 
 use std::include_bytes;
@@ -90,22 +90,6 @@ pub struct InvoiceLine {
     vat_rate: f32,
     date: String,
     seller: String,
-}
-
-fn check_file_exists_and_is_json(file_path: &str) -> bool {
-    let path = Path::new(file_path);
-
-    println!("Path: {:?}", path);
-
-    if path.exists() && path.is_file() {
-        if let Some(extension) = path.extension() {
-            if extension == "json" {
-                return true;
-            }
-        }
-    }
-
-    false
 }
 
 impl Invoice {

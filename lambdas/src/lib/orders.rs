@@ -1,18 +1,23 @@
-use printpdf::PdfDocumentReference;
 use printpdf::{Color, IndirectFontRef, Mm, PdfDocument, PdfLayerReference, Rgb};
+use printpdf::{ImageRotation, ImageTransform, PdfDocumentReference, Px};
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::BufWriter;
+use std::path::Path;
 
 use crate::pdf::add_hr;
-use crate::utils::{format_currency, generate_link, upload_object, BuyerDetails, S3Object};
+use crate::utils::{
+    check_file_exists_and_is_json, format_currency, generate_link, upload_object, BuyerDetails,
+    S3Object,
+};
 
 use std::include_bytes;
 
 const FONT_BYTES_ROBOTO_MED: &[u8] = include_bytes!("../../assets/fonts/Roboto-Medium.ttf");
 const FONT_BYTES_ROBOTO_REG: &[u8] = include_bytes!("../../assets/fonts/Roboto-Regular.ttf");
 const FONT_BYTES_OSWALD: &[u8] = include_bytes!("../../assets/fonts/Oswald-Medium.ttf");
-
+const VELOCITY_BYTES_IMAGE: &[u8] = include_bytes!("../../assets/images/velocity.jpeg");
+const FTF_BYTES_IMAGE: &[u8] = include_bytes!("../../assets/images/Ox_Farm_to_Fork_Logo.jpg");
 
 #[derive(Debug, Deserialize, Serialize)]
 /// An order for a buyer along with a hashmap of produce and order lines.
@@ -20,6 +25,24 @@ pub struct Order {
     buyer: BuyerDetails,
     date: String,
     lines: Vec<OrderLine>,
+}
+
+impl Order {
+    pub fn many_from_file(file_path: &Path) -> Vec<Order> {
+        if !check_file_exists_and_is_json(file_path.to_str().unwrap()) {
+            panic!("File does not exist or is not a json file");
+        }
+        #[derive(Debug, Deserialize)]
+        struct Orders {
+            orders: Vec<Order>,
+        }
+
+        let file = File::open(file_path).unwrap();
+        let reader = std::io::BufReader::new(file);
+        let orders: Orders = serde_json::from_reader(reader).unwrap();
+
+        orders.orders
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -45,7 +68,7 @@ fn add_table_header(current_layer: &PdfLayerReference, font: &IndirectFontRef, y
     current_layer.begin_text_section();
     current_layer.use_text("PRODUCE", font_size, Mm(10.0), Mm(y_tracker_mm), &font);
     current_layer.use_text("DESCRIPTION", font_size, Mm(50.0), Mm(y_tracker_mm), &font);
-    current_layer.use_text("UNIT", font_size, Mm(120.0), Mm(y_tracker_mm), &font);
+    current_layer.use_text("UNIT", font_size, Mm(115.0), Mm(y_tracker_mm), &font);
     current_layer.use_text("QTY", font_size, Mm(140.0), Mm(y_tracker_mm), &font);
     current_layer.use_text("PRICE", font_size, Mm(160.0), Mm(y_tracker_mm), &font);
     current_layer.use_text("TOTAL", font_size, Mm(180.0), Mm(y_tracker_mm), &font);
@@ -64,6 +87,50 @@ pub fn create_buyer_order_pdf(order: &Order) -> PdfDocumentReference {
     let pdf_title = format!("Order for {}", order.buyer.name);
     let (doc, page1, layer1) = PdfDocument::new(pdf_title, Mm(210.0), Mm(297.0), "Layer 1");
     let current_layer = doc.get_page(page1).get_layer(layer1);
+
+    let image_velocity = image::load_from_memory(VELOCITY_BYTES_IMAGE).unwrap();
+    let image = printpdf::Image::from_dynamic_image(&image_velocity);
+
+    let rotation_center_x = Px((image.image.width.0 as f32 / 4.0) as usize);
+    let rotation_center_y = Px((image.image.height.0 as f32 / 4.0) as usize);
+
+    image.add_to_layer(
+        current_layer.clone(),
+        ImageTransform {
+            rotate: Some(ImageRotation {
+                angle_ccw_degrees: 0.0,
+                rotation_center_x,
+                rotation_center_y,
+            }),
+            scale_x: Some(0.25),
+            scale_y: Some(0.25),
+            translate_x: Some(Mm(145.0)),
+            translate_y: Some(Mm(267.0)),
+            ..Default::default()
+        },
+    );
+
+    let image_velocity = image::load_from_memory(FTF_BYTES_IMAGE).unwrap();
+    let image = printpdf::Image::from_dynamic_image(&image_velocity);
+
+    let rotation_center_x = Px((image.image.width.0 as f32 / 4.0) as usize);
+    let rotation_center_y = Px((image.image.height.0 as f32 / 4.0) as usize);
+
+    image.add_to_layer(
+        current_layer.clone(),
+        ImageTransform {
+            rotate: Some(ImageRotation {
+                angle_ccw_degrees: 0.0,
+                rotation_center_x,
+                rotation_center_y,
+            }),
+            scale_x: Some(0.33),
+            scale_y: Some(0.33),
+            translate_x: Some(Mm(105.0)),
+            translate_y: Some(Mm(263.0)),
+            ..Default::default()
+        },
+    );
 
     let mut y_tracker_mm = 267.0;
 
@@ -108,7 +175,7 @@ pub fn create_buyer_order_pdf(order: &Order) -> PdfDocumentReference {
     let dt = chrono::NaiveDate::parse_from_str(&order.date, "%Y-%m-%d").unwrap();
 
     current_layer.set_font(&oswald, 12.0);
-    current_layer.write_text("ORDER DATE", &oswald);
+    current_layer.write_text("DELIVERY DATE", &oswald);
     current_layer.end_text_section();
 
     current_layer.begin_text_section();
@@ -141,8 +208,10 @@ pub fn create_buyer_order_pdf(order: &Order) -> PdfDocumentReference {
     current_layer.add_line_break();
 
     if let Some(address2) = &order.buyer.address2 {
-        current_layer.write_text(address2, &normal_roboto);
-        current_layer.add_line_break();
+        if address2 != "" {
+            current_layer.write_text(address2, &normal_roboto);
+            current_layer.add_line_break();
+        }
     }
 
     current_layer.write_text(&order.buyer.city, &normal_roboto);
@@ -195,7 +264,7 @@ fn add_order_line(
     current_layer.use_text(
         &order_line.unit,
         font_size,
-        Mm(120.0),
+        Mm(115.0),
         Mm(y_tracker_mm),
         &font,
     );
@@ -223,12 +292,11 @@ fn add_order_line(
     current_layer.end_text_section();
 }
 
-
 fn group_by_seller(lines: &Vec<OrderLine>) -> std::collections::HashMap<&str, Vec<OrderLine>> {
     let mut grouped = std::collections::HashMap::new();
 
     for line in lines {
-        let seller = line.seller.split_whitespace().next().unwrap();
+        let seller = line.seller.as_str();
         let entry = grouped.entry(seller).or_insert(Vec::new());
         entry.push(line.clone());
     }
