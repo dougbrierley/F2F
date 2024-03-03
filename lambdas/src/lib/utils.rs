@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use aws_sdk_s3 as s3;
 use calamine::{Data, Range};
 use s3::error::SdkError;
@@ -79,4 +81,20 @@ pub fn vat_rate_string(vat_rate: f32) -> String {
         return "No VAT".to_string();
     }
     format!("{}%", vat_rate * 100.0)
+}
+
+pub fn check_file_exists_and_is_json(file_path: &str) -> bool {
+    let path = Path::new(file_path);
+
+    println!("Path: {:?}", path);
+
+    if path.exists() && path.is_file() {
+        if let Some(extension) = path.extension() {
+            if extension == "json" {
+                return true;
+            }
+        }
+    }
+
+    false
 }

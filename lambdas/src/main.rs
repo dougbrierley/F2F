@@ -1,5 +1,5 @@
 use clap::{Args, Parser, Subcommand};
-use f2f::invoices::{create_invoices, read_invoice_files, Invoice};
+use f2f::{invoices::{create_invoices, read_invoice_files, Invoice}, orders::{create_buyer_orders, Order}};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -17,6 +17,7 @@ enum Commands {
     Invoice(InvoiceArgs),
     /// Generates invoices from json file
     InvoiceDev(InvoiceDevArgs),
+    OrderDev(InvoiceDevArgs)
 }
 
 // #[derive(Args)]
@@ -84,6 +85,16 @@ fn main() {
             let invoices = Invoice::many_from_file(path.as_path());
 
             create_invoices(invoices.iter().collect())
+        }
+        Commands::OrderDev(args) => {
+            let path = match args.path.clone() {
+                Some(p) => p,
+                None => panic!("No file provided"),
+            };
+
+            let orders = Order::many_from_file(path.as_path());
+
+            create_buyer_orders(orders.iter().collect())
         }
     }
 }
