@@ -1,4 +1,4 @@
-use printpdf::{Color, IndirectFontRef, Mm, PdfDocument, PdfLayerReference, Rgb};
+use printpdf::{Color, IndirectFontRef, LinkAnnotation, Mm, PdfDocument, PdfLayerReference, Rgb};
 use printpdf::{ImageRotation, ImageTransform, PdfDocumentReference, Px};
 use serde::{Deserialize, Serialize};
 use std::fs::File;
@@ -151,6 +151,21 @@ pub fn create_buyer_order_pdf(order: &Order) -> PdfDocumentReference {
     current_layer.end_text_section();
 
     current_layer.begin_text_section();
+
+    current_layer.use_text(
+        "If you have any questions, please contact: hello@velocitycc.co.uk",
+        8.0,
+        Mm(10.0),
+        Mm(10.0),
+        &normal_roboto,
+    );
+    current_layer.add_link_annotation(LinkAnnotation::new(
+        printpdf::Rect::new(Mm(62.0), Mm(8.0), Mm(93.0), Mm(14.0)),
+        None,
+        None,
+        printpdf::Actions::uri("mailto:hello@velocitycc.co.uk".to_string()),
+        None,
+    ));
     y_tracker_mm -= 18.0;
     current_layer.set_font(&oswald, 12.0);
     current_layer.set_text_cursor(Mm(140.0), Mm(y_tracker_mm));
