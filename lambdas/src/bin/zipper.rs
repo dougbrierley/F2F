@@ -21,12 +21,11 @@ async fn download_invoice_s3(
 pub async fn zip_keys(
     keys: &Vec<&str>,
     bucket: &String,
+    name: &String,
 ) -> Result<String, Box<dyn std::error::Error>> {
     let config = aws_config::load_from_env().await;
     let client = aws_sdk_s3::Client::new(&config);
-
-    let zip_name = "test_invoices.zip";
-    // let mut zip = zip::ZipWriter::new(std::fs::File::create(zip_name).unwrap());
+    let zip_name = format!("{}.zip", name);
     let mut inner: Vec<u8> = Vec::new();
 
     {
@@ -46,7 +45,7 @@ pub async fn zip_keys(
         zip.finish().unwrap();
     }
 
-    upload_object(&client, inner, bucket, zip_name)
+    upload_object(&client, inner, bucket, zip_name.as_str())
         .await
         .unwrap();
     println!("Uploaded zip");
@@ -74,10 +73,12 @@ async fn main() -> Result<(), Error> {
 #[derive(Deserialize, Serialize, Debug)]
 struct Incoming {
     links: Vec<String>,
+    name: String,
 }
 
 async fn func(event: LambdaEvent<Incoming>) -> Result<Value, Error> {
     let l: Vec<String> = event.payload.links;
+    let name = event.payload.name;
     tracing::info!("Received, {:?}", l);
 
     let keys = l
@@ -86,7 +87,7 @@ async fn func(event: LambdaEvent<Incoming>) -> Result<Value, Error> {
         .collect::<Vec<&str>>();
 
     let bucket = "serverless-s3-dev-ftfbucket-xcri21szhuya".to_string();
-    let zip = zip_keys(&keys, &bucket).await;
+    let zip = zip_keys(&keys, &bucket, &name).await;
 
     match zip {
         Ok(z) => {
