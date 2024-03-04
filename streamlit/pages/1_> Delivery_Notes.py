@@ -19,9 +19,14 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 st.title("Delivery Notes Generator")
 
-st.markdown("Upload weekly order Excel and contacts Excel to generate delivery notes.\n"
-            "When the delivery notes are generated, you will be able to download them by clicking the link(s) below.")
-st.markdown("Uploaded spreadsheets must be named exactly as e.g.: OxFarmToFork spreadsheet week 7 - 12_02_2024.xlsx")
+st.markdown("1. Download the weekly order Excel from the weekly link \n "
+            "2. Rename the Excel to the format: OxFarmToFork spreadsheet week N - DD_MM_YYYY.xlsx \n "
+            "3. Update the contacts spreadsheet with all contact info. \n"
+            " Note: - Do not change the column titles\n"
+            "- The names must exactly match those in the order spreadsheet.\n"
+            "- The invoice number column will be printed as the delivery number on the pdf.\n"
+            "4. Upload the order spreadsheet and the contacts spreadsheet below. \n"
+            "5. Delivery notes are automatically generated. Click to download.")
 
 
 order_sheet = st.file_uploader("Choose Weekly Order Excel", type="xlsx", accept_multiple_files=False)
