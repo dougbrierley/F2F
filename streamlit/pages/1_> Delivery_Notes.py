@@ -3,7 +3,6 @@ import pandas as pd
 import boto3
 import json
 import numpy as np
-import urllib.parse
 from functions import orderify, contacts_checker,contacts_formatter,extract_buyer_list, date_extractor
 import datetime
 
@@ -38,7 +37,6 @@ date = st.date_input("What's the order date?")
 if order_sheet and contacts and date:
     orders = pd.read_excel(order_sheet, header=2)
     contacts = pd.read_excel(contacts)
-
     # Get the names of the buyers that made orders this week
     buyers = extract_buyer_list(orders)
     # Format the contacts and orders dataframes
@@ -62,7 +60,6 @@ if order_sheet and contacts and date:
         lines = lines.to_dict("records")
         order_json_data.append({
         "date": date.strftime('%Y-%m-%d'),
-        "reference": "F2F-Jan",
         "buyer": buyer_info,
         "lines": lines
         })
@@ -70,17 +67,6 @@ if order_sheet and contacts and date:
     buyer_lines = {}
 
     selective_list = ["produce", "variant", "unit", "price", "qty"]
-
-    # for line in my_order_lines:
-    #     if line["buyer"] not in buyer_lines or not isinstance(buyer_lines[line["buyer"]], dict):
-    #         buyer_lines[line["buyer"]] = {}
-    #     if line["seller"] not in buyer_lines[line["buyer"]]:
-    #         buyer_lines[line["buyer"]][line["seller"]] = []
-    #     line_without_buyer = {k: v for k, v in line.items() if k not in ["buyer", "seller"]}
-    #     # print("Adding", line_without_buyer, "to", line["buyer"], "from", line["seller"])
-    #     buyer_lines[line["buyer"]][line["seller"]].append(line_without_buyer)
-    #     # print(buyer_lines[line["buyer"]])
-
 
     final_json_data = {"orders": order_json_data}
 
@@ -94,7 +80,7 @@ if order_sheet and contacts and date:
         # ClientContext='str_jsoning',
         Payload=invoice_data_json,
         # Qualifier='string'
-    )
+        )
     result = json.loads(response['Payload'].read().decode('utf-8'))
 
     i = 0
@@ -104,7 +90,7 @@ if order_sheet and contacts and date:
         i += 1
     
     links_data = {"links": result["links"],
-                  "name": f"{date.strftime('%Y-%m-%d')} Delivery Notes"}
+                "name": f"{date.strftime('%Y-%m-%d')} Delivery Notes"}
     links_json = json.dumps(links_data)
     zip = Lambda.invoke(
         FunctionName='arn:aws:lambda:eu-west-2:850434255294:function:zipper',
