@@ -18,16 +18,22 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 st.title("Invoice Generator")
 
-st.markdown("Upload weekly order excel and contacts CSV to generate delivery notes.")
-st.markdown("Uploaded spreadsheets must be named exactly as e.g.: OxFarmToFork spreadsheet week 7 - 12_02_2024.xlsx")
+st.markdown("1. Download all the weekly order Excels from the weekly links \n "
+            "2. Rename the Excel to the format: OxFarmToFork spreadsheet week N - DD_MM_YYYY.xlsx \n "
+            "3. Update the contacts spreadsheet with all contact info. \n"
+            " Note: \n"
+            "- Do not change the column titles\n"
+            "- The names must exactly match those in the order spreadsheet.\n"
+            "- The invoice number column will be printed as the delivery number on the pdf.\n"
+            "4. Upload the order spreadsheets and the contacts spreadsheet below. \n"
+            "5. Delivery notes are automatically generated. Click to download.")
 
-order_sheets = st.file_uploader("Choose Weekly Order Excels", type="xlsx", accept_multiple_files=True)
+order_sheets = st.file_uploader("Choose All Weekly Order Excels For Desired Invoice Period", type="xlsx", accept_multiple_files=True)
 contacts = st.file_uploader("Choose Contacts Excel", type="xlsx", accept_multiple_files=False)
 date = st.date_input("What's the Invoice date?")
 
 # contacts = "example_data/FarmToFork_Invoice_Contacts.xlsx"
 # order_sheets = ["example_data/OxFarmToFork spreadsheet week 7 - 12_02_2024.xlsx", "example_data/OxFarmToFork spreadsheet week 9 - 26_02_2024.xlsx"]
-file = "OxFarmToFork spreadsheet week 7 - 12_02_2024.xlsx"
 
 if order_sheets and contacts and date:
     contacts = pd.read_excel(contacts)
