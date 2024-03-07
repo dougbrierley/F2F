@@ -45,7 +45,6 @@ if order_sheets and contacts and date:
     reference = f"F2F-{month}"
     payment_terms = 14
     due_date = (date + timedelta(days=payment_terms)).strftime("%Y-%m-%d")
-    date = date.strftime('%Y-%m-%d')
 
     invoice_data = []
     all_orders = pd.DataFrame()
@@ -87,7 +86,7 @@ if order_sheets and contacts and date:
         lines = all_orders.loc[all_orders["buyer"] == buyer].drop("buyer", axis=1)
         lines = lines.to_dict("records")
         invoice_data.append({
-        "date": date,
+        "date": date.strftime('%Y-%m-%d'),
         "due_date": due_date,  # Add 14 days to the date
         "reference": reference,
         "buyer": buyer_info,
@@ -117,7 +116,7 @@ if order_sheets and contacts and date:
         i += 1
 
     links_data = {"links": result["links"],
-        "name": f"{date.strftime('%Y-%m-%d')} Delivery Notes"}
+        "name": f"{date.strftime('%Y-%m-%d')} Invoice"}
         
     links_json = json.dumps(links_data)
     zip = Lambda.invoke(
