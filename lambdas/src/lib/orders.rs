@@ -167,12 +167,9 @@ pub fn create_buyer_order_pdf(order: &Order) -> PdfDocumentReference {
         None,
     ));
     y_tracker_mm -= 18.0;
-    current_layer.set_font(&oswald, 12.0);
-    current_layer.set_text_cursor(Mm(140.0), Mm(y_tracker_mm));
-    current_layer.set_fill_color(Color::Rgb(Rgb::new(0.0, 0.04, 0.0, None)));
 
-    current_layer.set_line_height(14.0);
-    current_layer.write_text("ORDER #", &oswald);
+    current_layer.set_fill_color(Color::Rgb(Rgb::new(0.0, 0.04, 0.0, None)));
+    current_layer.use_text("ORDER #", 12.0, Mm(140.0), Mm(y_tracker_mm), &oswald);
     current_layer.end_text_section();
 
     current_layer.begin_text_section();
