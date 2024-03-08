@@ -4,9 +4,5 @@
 **/node_modules
 **/.venv
 .env
-<<<<<<< HEAD
-**/__pycache__
-=======
 **/__pycache__
 **/*.pyc
->>>>>>> 5365d3e (Added pycache to gitignore)
