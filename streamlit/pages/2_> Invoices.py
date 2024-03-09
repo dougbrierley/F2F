@@ -20,10 +20,7 @@ st.title("Invoice Generator")
 
 st.markdown("1. Download all the weekly order Excels from the weekly links \n "
             "2. Rename the Excel to the format: OxFarmToFork spreadsheet week N - DD_MM_YYYY.xlsx \n "
-            "3. Update the contacts spreadsheet with all contact info. \n"
-            " Note: \n"
-            "- Do not change the column titles\n"
-            "- The names must exactly match those in the order spreadsheet.\n"
+            "3. Update the contacts spreadsheet with all contact info. \n Note: \n - Do not change the column titles\n - The names must exactly match those in the order spreadsheet.\n"
             "4. Upload the order spreadsheets and the contacts spreadsheet below. \n"
             "5. Invoices are automatically generated. Click to download.")
 

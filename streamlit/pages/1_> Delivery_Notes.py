@@ -20,11 +20,7 @@ st.title("Delivery Notes Generator")
 
 st.markdown("1. Download the weekly order Excel from the weekly link \n "
             "2. Rename the Excel to the format: OxFarmToFork spreadsheet week N - DD_MM_YYYY.xlsx \n "
-            "3. Update the contacts spreadsheet with all contact info. \n"
-            " Note: \n"
-            "- Do not change the column titles\n"
-            "- The names must exactly match those in the order spreadsheet.\n"
-            "- The invoice number column will be printed as the delivery number on the pdf.\n"
+            "3. Update the contacts spreadsheet with all contact info. \n Note: \n - Do not change the column titles\n - The names must exactly match those in the order spreadsheet.\n - The invoice number column will be printed as the delivery number on the pdf.\n"
             "4. Upload the order spreadsheet and the contacts spreadsheet below. \n"
             "5. Delivery notes are automatically generated. Click to download.")
 
