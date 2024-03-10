@@ -83,8 +83,7 @@ def contacts_formatter(contacts):
         "Address Line 2": "address2",
         "City": "city",
         "Postcode": "postcode",
-        "Country": "country",
-        "Invoice Number": "number"
+        "Country": "country"
     }
 
     keys = list(column_mapping.keys())
@@ -98,6 +97,7 @@ def contacts_formatter(contacts):
         st.stop()
 
     contacts = contacts.rename(columns=column_mapping)
+    contacts["number"] = ""  # Add a new column called "number" with empty values
     st.toast(":white_check_mark: Contacts column names are correct")
     return contacts
 

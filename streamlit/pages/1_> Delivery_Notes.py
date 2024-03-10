@@ -26,7 +26,7 @@ instructions = '''
     Note:
     - Do not change the column titles
     - The names must exactly match those in the order spreadsheet.
-    - The number column is not used for the delivery notes, instead a unique reference number is generated for each buyer each week.
+    - The number column is not used for the delivery notes, instead a unique order number is generated for each buyer each week.
 4. Upload the order spreadsheet and the contacts spreadsheet below.
 5. Delivery notes are automatically generated. Click to download.
 '''
@@ -74,7 +74,7 @@ if st.button("Generate Delivery Notes"):
         # Iterate through the buyers and create the invoice data
         for buyer in buyers:
             # Rename the 'number' value
-            contacts.loc[contacts["key"] == buyer, "number"] = f"F2F{week_number}{year}{i}"
+            contacts.loc[contacts["key"] == buyer, "number"] = f"F2FD{week_number}{year}{i}"
             # Get the all the buyer's info
             buyer_info = contacts.loc[contacts["key"] == buyer]
             # Keep only the fields we need and convert to a dictionary

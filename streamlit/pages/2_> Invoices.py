@@ -6,6 +6,7 @@ from functions import *
 import datetime
 from datetime import datetime, timedelta
 import re
+from dateutil.relativedelta import relativedelta
 
 st.set_page_config(page_title="Invoice Generator")
 
@@ -53,14 +54,6 @@ if st.button("Generate Invoices"):
         contacts = pd.read_excel(contacts, sheet_name="Contacts")
         contacts = contacts_formatter(contacts)
 
-        # vat = pd.read_excel(contacts, sheet_name="VAT")
-
-        # Top of the invoice info
-        month = (date - timedelta(days=14)).strftime("%b") # Get the shortened month of the invoice
-        reference = f"F2F-{month}"
-        payment_terms = 14
-        due_date = (date + timedelta(days=payment_terms)).strftime("%Y-%m-%d")
-
         invoice_data = []
         all_orders = pd.DataFrame()
         buyers = set()
@@ -84,7 +77,7 @@ if st.button("Generate Invoices"):
             # Make the delivery date 8 days after the order date
             orders["date"] = (order_date + timedelta(days=8)).strftime('%Y-%m-%d')
             all_orders = pd.concat([all_orders, orders], ignore_index=True)
-        
+            
         # Add the VAT rate to the orders
         all_orders["vat_rate"] = 0
 
@@ -96,8 +89,19 @@ if st.button("Generate Invoices"):
         # Check for unmatched buyers
         unmatched_buyers = contacts_checker(contacts["key"], buyers)
 
+        # Top of the invoice info
+        previous_month = (date - relativedelta(months=1)).strftime("%b") # Get the shortened previous month of the invoice
+        previous_month_number = (date - relativedelta(months=1)).strftime("%m") # Get the number of the previous month
+        reference = f"F2F-{previous_month}"
+        payment_terms = 14
+        due_date = (date + timedelta(days=payment_terms)).strftime("%Y-%m-%d")
+        year = str(date.year)[-2:]
+        i = 1
         # Iterate through the buyers and create the invoice data
         for buyer in buyers:
+            # Rename the 'number' value
+            contacts.loc[contacts["key"] == buyer, "number"] = f"F2F{previous_month_number}{year}{i}"
+
             buyer_info = contacts.loc[contacts["key"] == buyer].to_dict("records")[0]
             lines = all_orders.loc[all_orders["buyer"] == buyer].drop("buyer", axis=1)
             lines = lines.to_dict("records")
@@ -108,6 +112,7 @@ if st.button("Generate Invoices"):
             "buyer": buyer_info,
             "lines": lines
             })
+            i += 1
 
         final_data = {"invoices": invoice_data}
         invoice_data_json = json.dumps(final_data)
