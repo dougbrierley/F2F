@@ -27,11 +27,12 @@ st.markdown("1. Download the weekly order Excel from the weekly link \n "
 
 order_sheet = st.file_uploader("Choose Weekly Order Excel", type="xlsx", accept_multiple_files=False)
 contacts = st.file_uploader("Choose Contacts Excel", type="xlsx", accept_multiple_files=False)
-date = st.date_input("What's the order date?")
+date = st.date_input("What's the delivery date?")
 
 
 if st.button("Generate Delivery Notes"):
     if order_sheet and contacts and date:
+        st.markdown("---")
         orders = pd.read_excel(order_sheet, header=2)
         contacts = pd.read_excel(contacts)
         # Get the names of the buyers that made orders this week

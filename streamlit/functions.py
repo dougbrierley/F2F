@@ -50,7 +50,7 @@ def orderify(orders):
     orders = orders.rename(columns=column_mapping)
 
     print("Order spreadsheet column names are correct")
-    st.toast("Order spreadsheet column names are correct")
+    st.toast(":white_check_mark: Order spreadsheet column names are correct")
 
     orders["variant"] = orders["variant"].apply(lambda x: x[:25] + "..." if len(x) > 25 else x)
     orders["price"] = (orders["price"] * 100).astype(int)
@@ -97,7 +97,7 @@ def contacts_formatter(contacts):
         st.stop()
 
     contacts = contacts.rename(columns=column_mapping)
-    st.toast("Contacts column names are correct")
+    st.toast(":white_check_mark: Contacts column names are correct")
     return contacts
 
     
@@ -118,7 +118,7 @@ def contacts_checker(contacts, buyers):
         print(f"Buyers: {unmatched_buyers} not found in contacts spreadsheet")
         st.stop()
     else:
-        st.toast("All buyers found in contacts")
+        st.toast(":white_check_mark: All buyers found in contacts")
         print("All buyers found in contacts") 
     return unmatched_buyers
 

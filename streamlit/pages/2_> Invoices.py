@@ -26,13 +26,14 @@ st.markdown("1. Download all the weekly order Excels from the weekly links \n "
 
 order_sheets = st.file_uploader("Choose All Weekly Order Excels For Desired Invoice Period", type="xlsx", accept_multiple_files=True)
 contacts = st.file_uploader("Choose Contacts Excel", type="xlsx", accept_multiple_files=False)
-date = st.date_input("What's the Invoice date?")
+date = st.date_input("What's the invoice date?")
 
 # contacts = "example_data/FarmToFork_Invoice_Contacts.xlsx"
 # order_sheets = ["example_data/OxFarmToFork spreadsheet week 7 - 12_02_2024.xlsx", "example_data/OxFarmToFork spreadsheet week 9 - 26_02_2024.xlsx"]
 
 if st.button("Generate Invoices"):
     if order_sheets and contacts and date:
+        st.markdown("---")
         contacts = pd.read_excel(contacts, sheet_name="Contacts")
         contacts = contacts_formatter(contacts)
 
