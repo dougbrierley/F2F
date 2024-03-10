@@ -26,6 +26,7 @@ instructions = '''
     Note:
     - Do not change the column titles
     - The names must exactly match those in the order spreadsheet.
+    - The number column is not used for the delivery notes, instead a unique reference number is generated for each buyer each week.
 4. Upload the order spreadsheet and the contacts spreadsheet below.
 5. Delivery notes are automatically generated. Click to download.
 '''
