@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 from datetime import datetime
+import re
 
 def orderify(orders):
     orders = orders.replace({np.nan: ""})
@@ -133,7 +134,13 @@ def extract_buyer_list(orders):
     return buyers
 
 def date_extractor(order_sheet):
-    order_sheet = str(order_sheet)
-    date_str = order_sheet.split(" - ")[-1].split(".")[0]
-    dateobj = datetime.strptime(date_str, "%d_%m_%Y")
-    return dateobj
+    try:
+        order_sheet_name = str(order_sheet)
+        date_str = order_sheet_name.split(" - ")[-1].split(".")[0]
+        dateobj = datetime.strptime(date_str, "%d_%m_%Y")
+        return dateobj
+    except ValueError as e:
+        st.error(f"Error: Failed to extract date from order sheet: {order_sheet.name}, make sure the file name is in the format '...N - dd_mm_yyyy.xlsx'")
+        print(f"Error: Failed to extract date from order sheet: {order_sheet.name}, make sure the file name is in the format '...N - dd_mm_yyyy.xlsx")
+        st.stop()
+

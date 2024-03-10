@@ -2,9 +2,10 @@ import streamlit as st
 import pandas as pd
 import boto3
 import json
-from functions import orderify, contacts_formatter, contacts_checker, date_extractor
+from functions import *
 import datetime
 from datetime import datetime, timedelta
+import re
 
 st.set_page_config(page_title="Invoice Generator")
 
@@ -17,14 +18,29 @@ hide_streamlit_style = """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 st.title("Invoice Generator")
-
-st.markdown("1. Download all the weekly order Excels from the weekly links \n "
-            "2. Rename the Excel to the format: OxFarmToFork spreadsheet week N - DD_MM_YYYY.xlsx \n "
-            "3. Update the contacts spreadsheet with all contact info. \n Note: \n - Do not change the column titles\n - The names must exactly match those in the order spreadsheet.\n"
-            "4. Upload the order spreadsheets and the contacts spreadsheet below. \n"
-            "5. Invoices are automatically generated. Click to download.")
+instructions = '''
+1. Download all the weekly order Excels from the weekly links
+2. Rename the Excel to the format: OxFarmToFork spreadsheet week N - DD_MM_YYYY.xlsx
+3. Update the contacts spreadsheet with all contact info.
+    Note:
+    - Do not change the column titles
+    - The names must exactly match those in the order spreadsheet.
+4. Upload the order spreadsheets and the contacts spreadsheet below.
+5. Invoices are automatically generated. Click to download.
+'''
+st.markdown(instructions)
 
 order_sheets = st.file_uploader("Choose All Weekly Order Excels For Desired Invoice Period", type="xlsx", accept_multiple_files=True)
+if order_sheets:
+    failed_files = []
+    for order_sheet in order_sheets:
+        expected_format = r"\d+ - \d{2}_\d{2}_\d{4}\.xlsx"
+        if not re.search(expected_format, order_sheet.name):
+            failed_files.append(order_sheet.name)
+    if failed_files:
+        failed_files = ", ".join([f for f in failed_files])
+        st.error(f"Invalid order sheet name for {failed_files}. Please rename the file(s) to the format: OxFarmToFork spreadsheet week N - DD_MM_YYYY.xlsx")
+
 contacts = st.file_uploader("Choose Contacts Excel", type="xlsx", accept_multiple_files=False)
 date = st.date_input("What's the invoice date?")
 
