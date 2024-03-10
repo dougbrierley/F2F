@@ -102,8 +102,8 @@ pub fn create_buyer_order_pdf(order: &Order) -> PdfDocumentReference {
                 rotation_center_x,
                 rotation_center_y,
             }),
-            scale_x: Some(0.25),
-            scale_y: Some(0.25),
+            scale_x: Some(1.35),
+            scale_y: Some(1.35),
             translate_x: Some(Mm(145.0)),
             translate_y: Some(Mm(267.0)),
             ..Default::default()
@@ -124,10 +124,10 @@ pub fn create_buyer_order_pdf(order: &Order) -> PdfDocumentReference {
                 rotation_center_x,
                 rotation_center_y,
             }),
-            scale_x: Some(0.33),
-            scale_y: Some(0.33),
-            translate_x: Some(Mm(105.0)),
-            translate_y: Some(Mm(263.0)),
+            scale_x: Some(1.3),
+            scale_y: Some(1.3),
+            translate_x: Some(Mm(100.0)),
+            translate_y: Some(Mm(260.0)),
             ..Default::default()
         },
     );
