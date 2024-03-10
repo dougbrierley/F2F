@@ -8,6 +8,11 @@ def orderify(orders):
 
     orders = orders.dropna(subset=["Produce Name"])
 
+    if "BUYERS:" not in orders.columns:
+        st.error("Error: Missing column 'BUYERS:' in order spreadsheet")
+        print("Error: Missing column 'BUYERS:' in order spreadsheet")
+        st.stop()
+
     # Get the names of the buyers that made orders this week
     buyers_column_index = orders.columns.get_loc("BUYERS:")
     # Replace empty string values with 0
@@ -16,21 +21,36 @@ def orderify(orders):
 
     # Remove rows where the sum of columns 9 onwards (the buyers area) is equal to 0
     orders = orders.loc[(orders.iloc[:, 9:].sum(axis=1) != 0)]
-
     buyers = orders.columns[buyers_column_index + 1:][orders.iloc[:, buyers_column_index + 1:].sum() > 0].tolist()
 
     if not buyers:
+        st.success("No buyers this week")
         print("No buyers this week")
 
     my_order_lines = []
 
-    orders = orders.rename(columns={
+    column_mapping = {
         "Produce Name": "produce",
         "Additional Info": "variant",
         "UNIT": "unit",
         "Price/   UNIT (£)": "price",
         "Growers": "seller",
-    })
+    }
+
+    keys = list(column_mapping.keys())
+    # Check if all keys exist in the columns of orders
+    if not set(keys).issubset(set(orders.columns)):
+        missing_columns = list(set(keys) - set(orders.columns))
+        missing_columns_str = ", ".join(missing_columns)  # Join the missing columns into a string
+        print(f"Error: Missing columns in order spreadsheet: {missing_columns_str}")
+        st.error(f"Error: Missing columns in order spreadsheet: {missing_columns_str}")
+        st.stop()
+
+
+    orders = orders.rename(columns=column_mapping)
+
+    print("Order spreadsheet column names are correct")
+    st.toast(":white_check_mark: Order spreadsheet column names are correct")
 
     orders["variant"] = orders["variant"].apply(lambda x: x[:25] + "..." if len(x) > 25 else x)
     orders["price"] = (orders["price"] * 100).astype(int)
@@ -54,21 +74,33 @@ def orderify(orders):
 
 def contacts_formatter(contacts):
     contacts = contacts.replace({np.nan: ""})
-    contacts = contacts.rename(
-        columns={
-            "Buyer": "name",
-            "Address Line 1": "address1",
-            "Address Line 2": "address2",
-            "City": "city",
-            "Postcode": "postcode",
-            "City": "city",
-            "Country": "country",
-            "Invoice Number": "number"
-        }
-    )
-    contacts = contacts[["name", "address1", "address2", "city", "postcode", "country", "number"]]
-    contacts = contacts.dropna(subset=["name"])  # Remove rows with no value in the "name" column
+
+    column_mapping = {
+        "Buyer Key as in Spreadsheet": "key",
+        "Buyer Full Name": "name",
+        "Address Line 1": "address1",
+        "Address Line 2": "address2",
+        "City": "city",
+        "Postcode": "postcode",
+        "Country": "country",
+        "Invoice Number": "number"
+    }
+
+    keys = list(column_mapping.keys())
+
+    # Check if all keys exist in the columns of orders
+    if not set(keys).issubset(set(contacts.columns)):
+        missing_columns = list(set(keys) - set(contacts.columns))
+        missing_columns_str = ", ".join(missing_columns)  # Join the missing columns into a string
+        print(f"Error: Missing columns in contacts spreadsheet: {missing_columns_str}")
+        st.error(f"Error: Missing columns in contacts spreadsheet: {missing_columns_str}")
+        st.stop()
+
+    contacts = contacts.rename(columns=column_mapping)
+    st.toast(":white_check_mark: Contacts column names are correct")
     return contacts
+
+    
 
 def add_delivery_fee(orders, delivery_fee, no_deliveries):
     for order in orders:
@@ -80,20 +112,24 @@ def contacts_checker(contacts, buyers):
     unmatched_buyers = []
     for buyer in buyers:
         if buyer not in contacts.tolist():
-            print(f"Buyer {buyer} not found in contacts")
             unmatched_buyers.append(buyer)
     if unmatched_buyers:
-        st.warning(f"Buyers: {unmatched_buyers} not found in contacts spreadsheet")
+        st.error(f"Buyers: {unmatched_buyers} not found in contacts spreadsheet")
         print(f"Buyers: {unmatched_buyers} not found in contacts spreadsheet")
         st.stop()
     else:
-        st.success("All buyers found in contacts")
+        st.toast(":white_check_mark: All buyers found in contacts")
         print("All buyers found in contacts") 
     return unmatched_buyers
 
 def extract_buyer_list(orders):
+    if "BUYERS:" not in orders.columns:
+        st.error("Error: Missing column 'BUYERS:' in order spreadsheet")
+        print("Error: Missing column 'BUYERS:' in order spreadsheet")
+        st.stop()
     buyers_column_index = orders.columns.get_loc("BUYERS:")
     buyers = orders.columns[buyers_column_index + 1:][orders.iloc[:, buyers_column_index + 1:].sum() > 0].tolist()
+    print(f"Buyer list: {buyers}")
     return buyers
 
 def date_extractor(order_sheet):
