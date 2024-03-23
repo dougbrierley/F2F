@@ -616,7 +616,7 @@ pub async fn create_invoice_s3(invoice: &Invoice) -> Result<S3Object, Box<dyn st
 
     let bucket_name = "serverless-s3-dev-ftfbucket-xcri21szhuya";
     let key = format!(
-        "Invoice {} for {} {}.pdf",
+        "Invoice {} {} {}.pdf",
         invoice.buyer.number, invoice.buyer.name, invoice.date
     );
 

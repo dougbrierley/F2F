@@ -1,4 +1,4 @@
-use printpdf::{Color, IndirectFontRef, Mm, PdfDocument, PdfLayerReference, Rgb};
+use printpdf::{Color, IndirectFontRef, LinkAnnotation, Mm, PdfDocument, PdfLayerReference, Rgb};
 use printpdf::{ImageRotation, ImageTransform, PdfDocumentReference, Px};
 use serde::{Deserialize, Serialize};
 use std::fs::File;
@@ -84,7 +84,10 @@ fn create_buyer_order(order: &Order) {
 }
 
 pub fn create_buyer_order_pdf(order: &Order) -> PdfDocumentReference {
-    let pdf_title = format!("Order for {}", order.buyer.name);
+    let pdf_title = format!(
+        "Order {} {} {}.pdf",
+        order.buyer.number, order.buyer.name, order.date
+    );
     let (doc, page1, layer1) = PdfDocument::new(pdf_title, Mm(210.0), Mm(297.0), "Layer 1");
     let current_layer = doc.get_page(page1).get_layer(layer1);
 
@@ -102,8 +105,8 @@ pub fn create_buyer_order_pdf(order: &Order) -> PdfDocumentReference {
                 rotation_center_x,
                 rotation_center_y,
             }),
-            scale_x: Some(0.25),
-            scale_y: Some(0.25),
+            scale_x: Some(1.35),
+            scale_y: Some(1.35),
             translate_x: Some(Mm(145.0)),
             translate_y: Some(Mm(267.0)),
             ..Default::default()
@@ -124,10 +127,10 @@ pub fn create_buyer_order_pdf(order: &Order) -> PdfDocumentReference {
                 rotation_center_x,
                 rotation_center_y,
             }),
-            scale_x: Some(0.33),
-            scale_y: Some(0.33),
-            translate_x: Some(Mm(105.0)),
-            translate_y: Some(Mm(263.0)),
+            scale_x: Some(1.3),
+            scale_y: Some(1.3),
+            translate_x: Some(Mm(100.0)),
+            translate_y: Some(Mm(260.0)),
             ..Default::default()
         },
     );
@@ -151,13 +154,25 @@ pub fn create_buyer_order_pdf(order: &Order) -> PdfDocumentReference {
     current_layer.end_text_section();
 
     current_layer.begin_text_section();
-    y_tracker_mm -= 18.0;
-    current_layer.set_font(&oswald, 12.0);
-    current_layer.set_text_cursor(Mm(140.0), Mm(y_tracker_mm));
-    current_layer.set_fill_color(Color::Rgb(Rgb::new(0.0, 0.04, 0.0, None)));
 
-    current_layer.set_line_height(14.0);
-    current_layer.write_text("ORDER #", &oswald);
+    current_layer.use_text(
+        "If you have any questions, please contact: hello@velocitycc.co.uk",
+        8.0,
+        Mm(10.0),
+        Mm(10.0),
+        &normal_roboto,
+    );
+    current_layer.add_link_annotation(LinkAnnotation::new(
+        printpdf::Rect::new(Mm(62.0), Mm(8.0), Mm(93.0), Mm(14.0)),
+        None,
+        None,
+        printpdf::Actions::uri("mailto:hello@velocitycc.co.uk".to_string()),
+        None,
+    ));
+    y_tracker_mm -= 18.0;
+
+    current_layer.set_fill_color(Color::Rgb(Rgb::new(0.0, 0.04, 0.0, None)));
+    current_layer.use_text("ORDER #", 12.0, Mm(140.0), Mm(y_tracker_mm), &oswald);
     current_layer.end_text_section();
 
     current_layer.begin_text_section();
@@ -389,7 +404,10 @@ pub async fn create_buyer_order_s3(order: &Order) -> Result<S3Object, Box<dyn st
     let doc = create_buyer_order_pdf(order);
 
     let bucket_name = "serverless-s3-dev-ftfbucket-xcri21szhuya";
-    let key = format!("{}.pdf", order.buyer.name);
+    let key = format!(
+        "Order {} {} {}.pdf",
+        order.buyer.number, order.buyer.name, order.date
+    );
 
     let config = aws_config::load_from_env().await;
     let client = aws_sdk_s3::Client::new(&config);
