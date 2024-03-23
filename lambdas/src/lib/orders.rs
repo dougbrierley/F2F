@@ -84,7 +84,10 @@ fn create_buyer_order(order: &Order) {
 }
 
 pub fn create_buyer_order_pdf(order: &Order) -> PdfDocumentReference {
-    let pdf_title = format!("Order for {}", order.buyer.name);
+    let pdf_title = format!(
+        "Order {} {} {}.pdf",
+        order.buyer.number, order.buyer.name, order.date
+    );
     let (doc, page1, layer1) = PdfDocument::new(pdf_title, Mm(210.0), Mm(297.0), "Layer 1");
     let current_layer = doc.get_page(page1).get_layer(layer1);
 
@@ -401,7 +404,10 @@ pub async fn create_buyer_order_s3(order: &Order) -> Result<S3Object, Box<dyn st
     let doc = create_buyer_order_pdf(order);
 
     let bucket_name = "serverless-s3-dev-ftfbucket-xcri21szhuya";
-    let key = format!("{}.pdf", order.buyer.name);
+    let key = format!(
+        "Order {} {} {}.pdf",
+        order.buyer.number, order.buyer.name, order.date
+    );
 
     let config = aws_config::load_from_env().await;
     let client = aws_sdk_s3::Client::new(&config);
