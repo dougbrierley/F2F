@@ -54,7 +54,13 @@ def orderify(orders):
     st.toast(":white_check_mark: Order spreadsheet column names are correct")
 
     orders["variant"] = orders["variant"].apply(lambda x: x[:25] + "..." if len(x) > 25 else x)
-    orders["price"] = (orders["price"] * 100).astype(int)
+
+    # Remove the £ sign from the price column and convert all values to integer
+    orders["price"] = orders["price"].str.replace("£", "").fillna(orders["price"])
+    orders["price"] = orders["price"].astype(int)
+
+    # Multiply the price by 100 to convert to pence
+    orders["price"] = (orders["price"] * 100)
 
     for buyer in buyers:
         # Save the rows that are non-zero for the current buyer
