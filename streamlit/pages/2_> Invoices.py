@@ -7,6 +7,7 @@ import datetime
 from datetime import datetime, timedelta
 import re
 from dateutil.relativedelta import relativedelta
+import numpy as np
 
 st.set_page_config(page_title="Invoice Generator")
 
@@ -81,14 +82,6 @@ if st.button("Generate Invoices"):
         # Add the VAT rate to the orders
         all_orders["vat_rate"] = 0
 
-        # Add the item column to the orders
-        all_orders["item"] = all_orders["produce"] + " - " + all_orders["variant"]
-        columns_to_drop = ["unit", "produce", "variant"]
-        all_orders = all_orders.drop(columns_to_drop, axis=1)
-
-        # Check for unmatched buyers
-        unmatched_buyers = contacts_checker(contacts["key"], buyers)
-
         # Top of the invoice info
         previous_month = (date - relativedelta(months=1)).strftime("%b") # Get the shortened previous month of the invoice
         previous_month_number = (date - relativedelta(months=1)).strftime("%m") # Get the number of the previous month
@@ -97,6 +90,20 @@ if st.button("Generate Invoices"):
         due_date = (date + timedelta(days=payment_terms)).strftime("%Y-%m-%d")
         year = str(date.year)[-2:]
         i = 1
+
+        # Add the item column to the orders
+        all_orders["item"] = all_orders["produce"] + " - " + all_orders["variant"]
+
+        all_orders["total_sold"] = all_orders["price"] * all_orders["qty"] /100
+        # Calculate the sum of total_sold for each seller
+        seller_sum = all_orders.groupby("seller")["total_sold"].sum()
+        st.dataframe(seller_sum)
+
+        columns_to_drop = ["unit", "produce", "variant","total_sold"]
+        all_orders = all_orders.drop(columns_to_drop, axis=1)
+
+        # Check for unmatched buyers
+        unmatched_buyers = contacts_checker(contacts["key"], buyers)
 
         # Iterate through the buyers and create the invoice data
         for buyer in buyers:
@@ -133,7 +140,6 @@ if st.button("Generate Invoices"):
 
         final_data = {"invoices": invoice_data}
         invoice_data_json = json.dumps(final_data)
-        print(invoice_data_json)
 
         Lambda = boto3.client('lambda', region_name="eu-west-2")
         response = Lambda.invoke(
