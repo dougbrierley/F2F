@@ -97,6 +97,7 @@ if st.button("Generate Invoices"):
         due_date = (date + timedelta(days=payment_terms)).strftime("%Y-%m-%d")
         year = str(date.year)[-2:]
         i = 1
+
         # Iterate through the buyers and create the invoice data
         for buyer in buyers:
             # Rename the 'number' value
@@ -104,19 +105,35 @@ if st.button("Generate Invoices"):
 
             buyer_info = contacts.loc[contacts["key"] == buyer].to_dict("records")[0]
             lines = all_orders.loc[all_orders["buyer"] == buyer].drop("buyer", axis=1)
+            
+            unique_dates = lines["date"].unique().tolist()
+
             lines = lines.to_dict("records")
+
+            # Add delivery fee
+            for delivery_date in unique_dates:
+                new_line = {
+                    "item": "Delivery",
+                    "price": 800,
+                    "seller": "Velocity",
+                    "date": delivery_date,
+                    "vat_rate": 0.2,
+                    "qty": 1
+                }
+                lines.append(new_line)
+
             invoice_data.append({
-            "date": date.strftime('%Y-%m-%d'),
-            "due_date": due_date,  
-            "reference": reference,
-            "buyer": buyer_info,
-            "lines": lines
+                "date": date.strftime('%Y-%m-%d'),
+                "due_date": due_date,  
+                "reference": reference,
+                "buyer": buyer_info,
+                "lines": lines
             })
             i += 1
 
         final_data = {"invoices": invoice_data}
         invoice_data_json = json.dumps(final_data)
-
+        print(invoice_data_json)
 
         Lambda = boto3.client('lambda', region_name="eu-west-2")
         response = Lambda.invoke(

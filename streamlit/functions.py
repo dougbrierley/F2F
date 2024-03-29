@@ -5,6 +5,11 @@ from datetime import datetime
 import re
 
 def orderify(orders):
+    '''
+        This function takes in the marketplace dataframe and returns a 
+        dataframe with each order as a separate row.
+    '''
+
     orders = orders.replace({np.nan: ""})
 
     orders = orders.dropna(subset=["Produce Name"])
@@ -53,14 +58,21 @@ def orderify(orders):
     print("Order spreadsheet column names are correct")
     st.toast(":white_check_mark: Order spreadsheet column names are correct")
 
+    # Truncate the variant column to 25 characters
     orders["variant"] = orders["variant"].apply(lambda x: x[:25] + "..." if len(x) > 25 else x)
 
-    # Remove the £ sign from the price column and convert all values to integer
-    orders["price"] = orders["price"].str.replace("£", "").fillna(orders["price"])
-    orders["price"] = orders["price"].astype(int)
+    
+    non_int_values = orders.loc[~orders["price"].apply(lambda x: isinstance(x, (int, float)))]["price"].tolist()
+    if non_int_values:
+        print(f"Non-number only values in price column: {non_int_values} Please make these numbers only")
+        st.error(f"Non-number only values in price column: {non_int_values} Please make these numbers only")
+        st.stop()
+    
+    orders["price"] = orders["price"].astype(float)
 
     # Multiply the price by 100 to convert to pence
     orders["price"] = (orders["price"] * 100)
+    orders["price"] = (orders["price"].astype(int))
 
     for buyer in buyers:
         # Save the rows that are non-zero for the current buyer
@@ -110,8 +122,8 @@ def contacts_formatter(contacts):
     
 
 def add_delivery_fee(orders, delivery_fee, no_deliveries):
-    for order in orders:
-        order.lines
+    
+
 
     return orders
 

@@ -56,7 +56,7 @@ if st.button("Generate Delivery Notes"):
 
         # Prepare the data for the reference number
         # Extract the week number from the order_sheet name
-        week_number_match = re.search(r"week (\d+)", order_sheet.name)
+        week_number_match = re.search(r"k (\d+)", order_sheet.name)
         if week_number_match:
             week_number = week_number_match.group(1)
         else:
