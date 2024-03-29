@@ -403,8 +403,10 @@ pub fn create_invoice_pdf(invoice: &Invoice) -> PdfDocumentReference {
     current_layer.add_line_break();
 
     if let Some(address2) = &invoice.buyer.address2 {
-        current_layer.write_text(address2, &normal_roboto);
-        current_layer.add_line_break();
+        if address2 != "" {
+            current_layer.write_text(address2, &normal_roboto);
+            current_layer.add_line_break();
+        }
     }
 
     current_layer.write_text(&invoice.buyer.city, &normal_roboto);
