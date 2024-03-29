@@ -1,4 +1,4 @@
-use printpdf::PdfDocumentReference;
+use printpdf::{ImageRotation, ImageTransform, PdfDocumentReference, Px};
 use printpdf::{Color, IndirectFontRef, Mm, PdfDocument, PdfLayerReference, Rgb};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -7,7 +7,8 @@ use std::io::BufWriter;
 
 use crate::pdf::{add_hr, add_hr_width};
 use crate::utils::{
-    check_file_exists_and_is_json, format_currency, generate_link, upload_object, vat_rate_string, BuyerDetails, S3Object
+    check_file_exists_and_is_json, format_currency, generate_link, upload_object, vat_rate_string,
+    BuyerDetails, S3Object,
 };
 
 use std::include_bytes;
@@ -70,6 +71,8 @@ fn is_in_month(file_name: &str, month: &str) -> bool {
 // const FONT_BYTES_ROBOTO_MED: &[u8] = include_bytes!("../../assets/fonts/Roboto-Medium.ttf");
 const FONT_BYTES_ROBOTO_REG: &[u8] = include_bytes!("../../assets/fonts/Roboto-Regular.ttf");
 const FONT_BYTES_OSWALD: &[u8] = include_bytes!("../../assets/fonts/Oswald-Medium.ttf");
+const VELOCITY_BYTES_IMAGE: &[u8] = include_bytes!("../../assets/images/velocity.jpeg");
+const FTF_BYTES_IMAGE: &[u8] = include_bytes!("../../assets/images/Ox_Farm_to_Fork_Logo.jpg");
 
 #[derive(Debug, Deserialize, Serialize)]
 /// An order for a buyer along with a hashmap of produce and order lines.
@@ -175,7 +178,52 @@ fn add_receiver(
 pub fn create_invoice_pdf(invoice: &Invoice) -> PdfDocumentReference {
     let pdf_title = format!("Order for {} {}", invoice.buyer.name, invoice.date);
     let (doc, page1, layer1) = PdfDocument::new(pdf_title, Mm(210.0), Mm(297.0), "Layer 1");
-    let current_layer = doc.get_page(page1).get_layer(layer1);
+    let mut current_layer = doc.get_page(page1).get_layer(layer1);
+    
+    let image_velocity = image::load_from_memory(VELOCITY_BYTES_IMAGE).unwrap();
+    let image = printpdf::Image::from_dynamic_image(&image_velocity);
+
+    let rotation_center_x = Px((image.image.width.0 as f32 / 4.0) as usize);
+    let rotation_center_y = Px((image.image.height.0 as f32 / 4.0) as usize);
+
+    image.add_to_layer(
+        current_layer.clone(),
+        ImageTransform {
+            rotate: Some(ImageRotation {
+                angle_ccw_degrees: 0.0,
+                rotation_center_x,
+                rotation_center_y,
+            }),
+            scale_x: Some(1.35),
+            scale_y: Some(1.35),
+            translate_x: Some(Mm(145.0)),
+            translate_y: Some(Mm(267.0)),
+            ..Default::default()
+        },
+    );
+
+    let image_velocity = image::load_from_memory(FTF_BYTES_IMAGE).unwrap();
+    let image = printpdf::Image::from_dynamic_image(&image_velocity);
+
+    let rotation_center_x = Px((image.image.width.0 as f32 / 4.0) as usize);
+    let rotation_center_y = Px((image.image.height.0 as f32 / 4.0) as usize);
+
+    image.add_to_layer(
+        current_layer.clone(),
+        ImageTransform {
+            rotate: Some(ImageRotation {
+                angle_ccw_degrees: 0.0,
+                rotation_center_x,
+                rotation_center_y,
+            }),
+            scale_x: Some(1.3),
+            scale_y: Some(1.3),
+            translate_x: Some(Mm(100.0)),
+            translate_y: Some(Mm(260.0)),
+            ..Default::default()
+        },
+    );
+
 
     let mut y_tracker_mm = 267.0;
 
@@ -355,8 +403,10 @@ pub fn create_invoice_pdf(invoice: &Invoice) -> PdfDocumentReference {
     current_layer.add_line_break();
 
     if let Some(address2) = &invoice.buyer.address2 {
-        current_layer.write_text(address2, &normal_roboto);
-        current_layer.add_line_break();
+        if address2 != "" {
+            current_layer.write_text(address2, &normal_roboto);
+            current_layer.add_line_break();
+        }
     }
 
     current_layer.write_text(&invoice.buyer.city, &normal_roboto);
@@ -370,20 +420,32 @@ pub fn create_invoice_pdf(invoice: &Invoice) -> PdfDocumentReference {
     y_tracker_mm = 203.0;
     add_table_header(&current_layer, &oswald, y_tracker_mm);
     add_invoice_lines_to_pdf(
-        &current_layer,
+        &doc,
+        &mut current_layer,
         &normal_roboto,
         &invoice.lines,
         &mut y_tracker_mm,
     );
     let summary = InvoiceSummary::from_invoice(invoice);
-    // let total = total_per_order(invoice);
+    
+    if y_tracker_mm < 50.0 {
+        current_layer = add_page(&doc);
+        y_tracker_mm = 277.0;
+    }
     add_total(&current_layer, &normal_roboto, y_tracker_mm, summary);
 
+    y_tracker_mm -= 30.0;
+
     let due_date = chrono::NaiveDate::parse_from_str(&invoice.due_date, "%Y-%m-%d").unwrap();
+    if y_tracker_mm < 50.0 {
+        current_layer = add_page(&doc);
+        y_tracker_mm = 277.0;
+    }
+
     add_receiver(
         &current_layer,
         &normal_roboto,
-        y_tracker_mm - 30.0,
+        y_tracker_mm,
         due_date.format("%d %b %Y").to_string().as_str(),
     );
 
@@ -469,7 +531,7 @@ fn group_by_seller(lines: &Vec<InvoiceLine>) -> std::collections::HashMap<&str, 
     let mut grouped = std::collections::HashMap::new();
 
     for line in lines {
-        let seller = line.seller.split_whitespace().next().unwrap();
+        let seller = line.seller.as_str();
         let entry = grouped.entry(seller).or_insert(Vec::new());
         entry.push(line);
     }
@@ -491,8 +553,14 @@ fn total_per_seller_in_invoice(lines: &Vec<&InvoiceLine>) -> u32 {
     total
 }
 
+fn add_page(doc: &PdfDocumentReference) -> PdfLayerReference {
+    let (page, layer) = doc.add_page(Mm(210.0), Mm(297.0), "layer new");
+    doc.get_page(page).get_layer(layer)
+}
+
 fn add_invoice_lines_to_pdf(
-    current_layer: &PdfLayerReference,
+    doc: &PdfDocumentReference,
+    current_layer: &mut PdfLayerReference,
     font: &IndirectFontRef,
     invoice_lines: &Vec<InvoiceLine>,
     y_tracker_mm: &mut f32,
@@ -503,6 +571,14 @@ fn add_invoice_lines_to_pdf(
 
     for (grower, lines) in grouped {
         *y_tracker_mm -= 3.0;
+
+        if *y_tracker_mm < 30.0 {
+            *current_layer = add_page(doc);
+            *y_tracker_mm = 277.0;
+            add_table_header(&current_layer, font, *y_tracker_mm);
+            *y_tracker_mm -= 7.0;
+        }
+
         current_layer.use_text(grower, 12.0, Mm(10.0), Mm(*y_tracker_mm), font);
         current_layer.use_text(
             format_currency(total_per_seller_in_invoice(&lines)),
@@ -511,11 +587,18 @@ fn add_invoice_lines_to_pdf(
             Mm(*y_tracker_mm),
             font,
         );
+
         *y_tracker_mm -= 1.0;
-        add_hr(current_layer, *y_tracker_mm, 0.5);
+        add_hr(&current_layer, *y_tracker_mm, 0.5);
         *y_tracker_mm -= 6.0;
         for line in lines {
-            add_invoice_line(current_layer, line, font, *y_tracker_mm);
+            if *y_tracker_mm < 30.0 {
+                *current_layer = add_page(doc);
+                *y_tracker_mm = 277.0;
+                add_table_header(&current_layer, font, *y_tracker_mm);
+                *y_tracker_mm -= 7.0;
+            }
+            add_invoice_line(&current_layer, line, font, *y_tracker_mm);
             *y_tracker_mm -= 6.0;
         }
     }
