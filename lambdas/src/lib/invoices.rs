@@ -1,4 +1,4 @@
-use printpdf::{pdf_layer, ImageRotation, ImageTransform, PdfDocumentReference, Px};
+use printpdf::{ImageRotation, ImageTransform, PdfDocumentReference, Px};
 use printpdf::{Color, IndirectFontRef, Mm, PdfDocument, PdfLayerReference, Rgb};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -425,18 +425,25 @@ pub fn create_invoice_pdf(invoice: &Invoice) -> PdfDocumentReference {
         &mut y_tracker_mm,
     );
     let summary = InvoiceSummary::from_invoice(invoice);
-    // let total = total_per_order(invoice);
-    if y_tracker_mm < 30.0 {
+    
+    if y_tracker_mm < 50.0 {
         current_layer = add_page(&doc);
         y_tracker_mm = 277.0;
     }
     add_total(&current_layer, &normal_roboto, y_tracker_mm, summary);
 
+    y_tracker_mm -= 30.0;
+
     let due_date = chrono::NaiveDate::parse_from_str(&invoice.due_date, "%Y-%m-%d").unwrap();
+    if y_tracker_mm < 50.0 {
+        current_layer = add_page(&doc);
+        y_tracker_mm = 277.0;
+    }
+
     add_receiver(
         &current_layer,
         &normal_roboto,
-        y_tracker_mm - 30.0,
+        y_tracker_mm,
         due_date.format("%d %b %Y").to_string().as_str(),
     );
 
@@ -522,7 +529,7 @@ fn group_by_seller(lines: &Vec<InvoiceLine>) -> std::collections::HashMap<&str, 
     let mut grouped = std::collections::HashMap::new();
 
     for line in lines {
-        let seller = line.seller.split_whitespace().next().unwrap();
+        let seller = line.seller.as_str();
         let entry = grouped.entry(seller).or_insert(Vec::new());
         entry.push(line);
     }
