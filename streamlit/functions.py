@@ -4,7 +4,7 @@ import streamlit as st
 from datetime import datetime
 import re
 
-def orderify(orders):
+def orderify(orders, order_sheet_name=None):
     '''
         This function takes in the marketplace dataframe and returns a 
         dataframe with each order as a separate row.
@@ -64,8 +64,12 @@ def orderify(orders):
     
     non_int_values = orders.loc[~orders["price"].apply(lambda x: isinstance(x, (int, float)))]["price"].tolist()
     if non_int_values:
-        print(f"Non-number only values in price column: {non_int_values} Please make these numbers only")
-        st.error(f"Non-number only values in price column: {non_int_values} Please make these numbers only")
+        if order_sheet_name:
+            print(f"Non-number only values in price column in {order_sheet_name}: {non_int_values} Please make these numbers only")
+            st.error(f"Non-number only values in price column in {order_sheet_name}: {non_int_values} Please make these numbers only")
+        else:
+            print(f"Non-number only values in price column: {non_int_values} Please make these numbers only")
+            st.error(f"Non-number only values in price column: {non_int_values} Please make these numbers only")
         st.stop()
     
     orders["price"] = orders["price"].astype(float)

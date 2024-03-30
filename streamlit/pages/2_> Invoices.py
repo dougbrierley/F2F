@@ -73,7 +73,7 @@ if st.button("Generate Invoices"):
                 st.write("No buyers this week")
                 continue
 
-            orders = orderify(marketplace)
+            orders = orderify(marketplace, order_sheet.name)
 
             # Make the delivery date 8 days after the order date
             orders["date"] = (order_date + timedelta(days=8)).strftime('%Y-%m-%d')
