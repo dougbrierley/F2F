@@ -9,6 +9,10 @@ import re
 from dateutil.relativedelta import relativedelta
 import numpy as np
 
+feature_flags = {
+    "delivery_fees": False
+}
+
 st.set_page_config(page_title="Invoice Generator")
 
 hide_streamlit_style = """
@@ -118,16 +122,18 @@ if st.button("Generate Invoices"):
             lines = lines.to_dict("records")
 
             # Add delivery fee
-            for delivery_date in unique_dates:
-                new_line = {
-                    "item": "Delivery",
-                    "price": 800,
-                    "seller": "Velocity",
-                    "date": delivery_date,
-                    "vat_rate": 0.2,
-                    "qty": 1
-                }
-                lines.append(new_line)
+
+            if feature_flags["delivery_fees"]:
+                for delivery_date in unique_dates:
+                    new_line = {
+                        "item": "Delivery",
+                        "price": 800,
+                        "seller": "Velocity",
+                        "date": delivery_date,
+                        "vat_rate": 0.2,
+                        "qty": 1
+                    }
+                    lines.append(new_line)
 
             invoice_data.append({
                 "date": date.strftime('%Y-%m-%d'),
