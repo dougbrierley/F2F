@@ -9,6 +9,7 @@ import re
 from dateutil.relativedelta import relativedelta
 import numpy as np
 
+# Set the feature flags
 feature_flags = {
     "delivery_fees": False
 }
