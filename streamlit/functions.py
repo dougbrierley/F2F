@@ -20,13 +20,13 @@ def orderify(orders, order_sheet_name=None):
         st.stop()
 
     # Get the names of the buyers that made orders this week
-    buyers_column_index = orders.columns.get_loc("BUYERS:")
+    buyers_column_index = orders.columns.get_loc("BUYERS:")+1
     # Replace empty string values with 0
-    orders.iloc[:, buyers_column_index + 1:] = orders.iloc[:, buyers_column_index + 1:].replace({"":0})
+    orders.iloc[:, buyers_column_index:] = orders.iloc[:, buyers_column_index:].replace({"":0})
     
-
+    
     # Remove rows where the sum of columns 9 onwards (the buyers area) is equal to 0
-    orders = orders.loc[(orders.iloc[:, 9:].sum(axis=1) != 0)]
+    orders = orders.loc[(orders.iloc[:, buyers_column_index:].sum(axis=1) != 0)]
     buyers = orders.columns[buyers_column_index + 1:][orders.iloc[:, buyers_column_index + 1:].sum() > 0].tolist()
 
     if not buyers:

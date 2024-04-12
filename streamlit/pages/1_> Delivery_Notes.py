@@ -64,7 +64,7 @@ if st.button("Generate Delivery Notes"):
             st.error("Invalid order sheet name. Please use the format: OxFarmToFork spreadsheet week N - DD_MM_YYYY.xlsx")
         year = str(date.year)[-2:]
         
-        orders = orderify(orders)
+        orders = orderify(orders, order_sheet.name)
 
         # Write out all the columns we need from the contacts spreadsheet
         buyer_json_fields = ["name", "address1", "address2", "city", "postcode", "country", "number"]
