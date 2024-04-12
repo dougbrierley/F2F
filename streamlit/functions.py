@@ -349,14 +349,15 @@ def orderify(
     order_lines: list[OrderLine] = []
 
     i = header_row - 1
-    for row in order_sheet.iter_rows(min_row=header_row + 2, values_only=True):
+    for row in order_sheet.iter_rows(min_row=header_row+1, values_only=True):
         i = i + 1
+
+        if (i<10):
+            print(row)
 
         if row[headers_dict["price"]] == None or row[headers_dict["price"]] == "":
             continue
 
-        # seller = Seller(name = row[headers_dict["seller"]])
-        # sellers.add(seller)
         for index, buyer in buyers.items():
             qty, parsing_errors = parseQuantity(
                 str(row[index]), i, buyer, parsing_errors
@@ -416,11 +417,6 @@ def contacts_formatter(contacts):
     contacts["number"] = ""  # Add a new column called "number" with empty values
     st.toast(":white_check_mark: Contacts column names are correct")
     return contacts
-
-
-def add_delivery_fee(orders, delivery_fee, no_deliveries):
-
-    return orders
 
 
 def contacts_checker(contacts, buyers):

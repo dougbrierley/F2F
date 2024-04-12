@@ -53,7 +53,7 @@ date = st.date_input("What's the delivery date?")
 if st.button("Generate Delivery Notes"):
     if order_sheet_file and contacts and date:
         st.markdown("---")
-        order_sheet_all = load_workbook(order_sheet_file)
+        order_sheet_all = load_workbook(order_sheet_file, data_only=True)
         order_sheet = order_sheet_all["GROWERS' PAGE"]
 
         contacts_workbook = load_workbook(contacts)
@@ -74,11 +74,15 @@ if st.button("Generate Delivery Notes"):
 
         orders, errors = orderify(order_sheet, buyers, errors)
 
-        print(orders)
+        if (errors.areErrors()):
+            st.error("Errors found in the order sheet. Please fix and try again.")
+            for error in errors.errors:
+                st.error(error)
 
         all_orders: list[DeliveryNote]= []
         i = 1
         buyers_with_order: list[str] = []
+
         # Iterate through the buyers and create the invoice data
         for buyer in buyers:
             order = DeliveryNote(date, buyer)
@@ -91,6 +95,7 @@ if st.button("Generate Delivery Notes"):
                 buyers_with_order.append(buyer.name)
 
             i += 1
+
 
         final_json_data = {"orders": [order.toJSON() for order in all_orders]}
         invoice_data_json = json.dumps(final_json_data)
