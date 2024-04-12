@@ -32,14 +32,14 @@ instructions = """
 st.markdown(instructions)
 
 
-order_sheet = st.file_uploader(
+order_sheet_file = st.file_uploader(
     "Choose Weekly Order Excel. MUST be in format: OxFarmToFork spreadsheet week N - DD_MM_YYYY.xlsx",
     type="xlsx",
     accept_multiple_files=False,
 )
-if order_sheet:
+if order_sheet_file:
     expected_format = r"\d+ - \d{2}_\d{2}_\d{4}\.xlsx"
-    if not re.search(expected_format, order_sheet.name):
+    if not re.search(expected_format, order_sheet_file.name):
         st.error(
             "Invalid order sheet name. Please rename the file to the format: OxFarmToFork spreadsheet week N - DD_MM_YYYY.xlsx"
         )
@@ -51,22 +51,19 @@ date = st.date_input("What's the delivery date?")
 # prepare order number parts
 
 if st.button("Generate Delivery Notes"):
-    if order_sheet and contacts and date:
+    if order_sheet_file and contacts and date:
         st.markdown("---")
-        spreadsheet_all = load_workbook(order_sheet)
-        order_sheet = spreadsheet_all["GROWERS' PAGE"]
+        order_sheet_all = load_workbook(order_sheet_file)
+        order_sheet = order_sheet_all["GROWERS' PAGE"]
 
         contacts_workbook = load_workbook(contacts)
         contact_sheet = contacts_workbook["Contacts"]
 
-        buyers, errors = contacts_uploader(contacts)
-
-        # Get the names of the buyers that made orders this week
-        unmatched_buyers = contacts_checker(contacts["key"], buyers)
+        buyers, errors = contacts_uploader(contact_sheet)
 
         # Prepare the data for the reference number
         # Extract the week number from the order_sheet name
-        week_number_match = re.search(r"k (\d+)", order_sheet.name)
+        week_number_match = re.search(r"k (\d+)", order_sheet_file.name)
         if week_number_match:
             week_number = week_number_match.group(1)
         else:
@@ -75,21 +72,30 @@ if st.button("Generate Delivery Notes"):
             )
         year = str(date.year)[-2:]
 
-        orders, errors = orderify(order_sheet, errors)
+        orders, errors = orderify(order_sheet, buyers, errors)
 
-        orders: list[DeliveryNote]= []
+        print(orders)
+
+        all_orders: list[DeliveryNote]= []
         i = 1
+        buyers_with_order: list[str] = []
         # Iterate through the buyers and create the invoice data
         for buyer in buyers:
             order = DeliveryNote(date, buyer)
 
-            order_lines = [line for line in orders if line.buyer == buyer.key]
+            order.lines = [line for line in orders if line.buyer == buyer.key]
             order.buyer.number = f"F2FD{week_number}{year}{i}"
+
+            if (len(order.lines) > 0):
+                all_orders.append(order)
+                buyers_with_order.append(buyer.name)
 
             i += 1
 
-        final_json_data = {"orders": [order.toJSON() for order in orders]}
+        final_json_data = {"orders": [order.toJSON() for order in all_orders]}
         invoice_data_json = json.dumps(final_json_data)
+
+        print(invoice_data_json)
 
         Lambda = boto3.client("lambda", region_name="eu-west-2")
         response = Lambda.invoke(
@@ -105,7 +111,7 @@ if st.button("Generate Delivery Notes"):
         i = 0
         for link in result["links"]:
             encoded_link = link.replace(" ", "%20")
-            st.markdown(f"[{buyers[i]} Delivery Notes]({encoded_link})")
+            st.markdown(f"[{buyers_with_order[i]} Delivery Notes]({encoded_link})")
             i += 1
 
         links_data = {
