@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 import re
 from dateutil.relativedelta import relativedelta
 import numpy as np
+from openpyxl.reader.excel import load_workbook
 
 # Set the feature flags
 feature_flags = {
@@ -58,28 +59,22 @@ date = st.date_input("What's the invoice date?")
 if st.button("Generate Invoices"):
     if order_sheets and contacts and date:
         st.markdown("---")
-        contacts = pd.read_excel(contacts, sheet_name="Contacts")
-        contacts = contacts_formatter(contacts)
+
+        contacts_workbook = load_workbook(contacts)
+        contact_sheet = contacts_workbook["Contacts"]
+
+        buyers, errors = contacts_uploader(contact_sheet)
 
         invoice_data = []
-        all_orders = pd.DataFrame()
-        buyers = set()
 
         # Iterate through the order sheets, adding the orders to the all_orders dataframe
-        for order_sheet in order_sheets:
-            marketplace = pd.read_excel(order_sheet, sheet_name="GROWERS' PAGE", header=2)
-            order_date = date_extractor(order_sheet)
+        for order_sheet_file in order_sheets:
+            order_sheet_all = load_workbook(order_sheet_file, data_only=True)
+            order_sheet = order_sheet_all["GROWERS' PAGE"]
+
+            order_date = date_extractor(order_sheet_file)
             
-            # Get the names of the buyers that made orders this week, using the "Buyers:" column as a marker
-            buyers_column_index = marketplace.columns.get_loc("BUYERS:")
-            new_buyers = marketplace.columns[buyers_column_index + 1:][marketplace.iloc[:, buyers_column_index + 1:].sum() > 0].tolist()
-            buyers.update(new_buyers)  # Update buyers with new_buyers
-
-            if not new_buyers:
-                st.write("No buyers this week")
-                continue
-
-            orders = orderify(marketplace, order_sheet.name)
+            orders = orderify(order_sheet, buyers, errors, order_sheet_file.name)
 
             # Make the delivery date 8 days after the order date
             orders["date"] = (order_date + timedelta(days=8)).strftime('%Y-%m-%d')
