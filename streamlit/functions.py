@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 import openpyxl
 from typing import Optional
 import json
+from openpyxl.reader.excel import load_workbook
 
 
 class ExcelParsingErrors:
@@ -462,6 +463,13 @@ def date_extractor(order_sheet):
         )
         st.stop()
 
+def load_order_file(order_sheet_file):
+    order_sheet_all = load_workbook(order_sheet_file, data_only=True)
+    try:
+        order_sheet = order_sheet_all["GROWERS' PAGE"]
+    except KeyError:
+        st.error("Expected GROWERS' PAGE worksheet, but it does not exist.")
+    return order_sheet
 
 if __name__ == "__main__":
     spreadsheet_all = openpyxl.load_workbook("./test.xlsx", data_only=True)
