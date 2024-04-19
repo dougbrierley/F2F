@@ -53,12 +53,7 @@ date = st.date_input("What's the delivery date?")
 if st.button("Generate Delivery Notes"):
     if order_sheet_file and contacts and date:
         st.markdown("---")
-        order_sheet_all = load_order_file(order_sheet_file)
-        try:
-            order_sheet = order_sheet_all["GROWERS' PAGE"]
-        except KeyError:
-            st.error("Expected GROWERS' PAGE worksheet, but it does not exist.")
-
+        order_sheet = load_order_file(order_sheet_file)
 
         contacts_workbook = load_workbook(contacts)
         contact_sheet = contacts_workbook["Contacts"]
