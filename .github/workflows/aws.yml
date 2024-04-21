@@ -79,7 +79,7 @@ jobs:
 
     - name: Load task definition
       run: |
-       aws ecs describe-task-definition --task-definition fargate-node-task-defn --query taskDefinition > task-definition.json
+       aws ecs describe-task-definition --task-definition fargate-node-task-defn --query $ECS_TASK_DEFINITION > task-definition.json
 
     - name: Fill in the new image ID in the Amazon ECS task definition
       id: task-def
