@@ -1,0 +1,11 @@
+{
+  "availability-zones:account=850434255294:region=eu-west-2": [
+    "eu-west-2a",
+    "eu-west-2b",
+    "eu-west-2c"
+  ],
+  "hosted-zone:account=850434255294:domainName=oxfarmtofork.org:region=eu-west-2": {
+    "Id": "/hostedzone/Z037973337N1O62I2MAMT",
+    "Name": "oxfarmtofork.org."
+  }
+}
