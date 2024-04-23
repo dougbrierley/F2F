@@ -1,6 +1,7 @@
 import * as cdk from "aws-cdk-lib";
 import { Certificate, CertificateValidation } from "aws-cdk-lib/aws-certificatemanager";
 import { Vpc } from "aws-cdk-lib/aws-ec2";
+import { Repository } from "aws-cdk-lib/aws-ecr";
 import {
   AwsLogDriver,
   Cluster,
@@ -15,6 +16,7 @@ import {
   ListenerCertificate,
   SslPolicy,
 } from "aws-cdk-lib/aws-elasticloadbalancingv2";
+import { Effect, ManagedPolicy, PolicyStatement, Role, ServicePrincipal } from "aws-cdk-lib/aws-iam";
 import { ARecord, CnameRecord, HostedZone, RecordTarget } from "aws-cdk-lib/aws-route53";
 import { LoadBalancerTarget } from "aws-cdk-lib/aws-route53-targets";
 import { Construct } from "constructs";
@@ -35,7 +37,21 @@ export class InfraStack extends cdk.Stack {
       containerInsights: true,
     });
 
-    const image = ContainerImage.fromRegistry("amazon/amazon-ecs-sample");
+    const repo = Repository.fromRepositoryName(this, "InfraRepository", "infra-repository");
+    const image = ContainerImage.fromEcrRepository(repo, "latest");
+
+    const taskRole = new Role(this, 'Streamlit Execution Role', {
+      assumedBy: new ServicePrincipal('ecs-tasks.amazonaws.com'),
+    });
+
+    const lambdaInvokePolicy = new PolicyStatement({
+      effect: Effect.ALLOW,
+      actions: ['lambda:InvokeFunction'],
+      resources: ['*'], // You can specify specific Lambda function ARNs here for better security
+    });
+
+    taskRole.addToPolicy(lambdaInvokePolicy);
+    taskRole.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName('AmazonS3FullAccess'));
 
     const loadBalancer = new ApplicationLoadBalancer(this, "InfraLoadBalancer", {
       vpc: vpc,
@@ -86,6 +102,7 @@ export class InfraStack extends cdk.Stack {
     const fargateTaskDefinition = new FargateTaskDefinition(this, "InfraTaskDefinition", {
       memoryLimitMiB: 2048,
       cpu: 1024,
+      taskRole
     });
 
     const container = fargateTaskDefinition.addContainer("InfraContainer", {
@@ -94,7 +111,7 @@ export class InfraStack extends cdk.Stack {
     });
 
     container.addPortMappings({
-      containerPort: 80,
+      containerPort: 8501,
     });
 
     const service = new FargateService(this, "InfraService", {
