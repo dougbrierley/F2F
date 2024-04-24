@@ -163,7 +163,6 @@ export class InfraStack extends cdk.Stack {
             commands: [
               'cd streamlit',
               `docker build -t $ecr_repo_uri:$tag .`,
-              '$(aws ecr get-login-password)',
               'docker push $ecr_repo_uri:$tag'
             ]
           },
@@ -235,7 +234,7 @@ export class InfraStack extends cdk.Stack {
       ]
     });
 
-    repo.grantPullPush(project.role!)
+    repo.grantPullPush(project);
     project.addToRolePolicy(new PolicyStatement({
       actions: [
         "ecs:describecluster",
