@@ -1,5 +1,8 @@
 import * as cdk from "aws-cdk-lib";
 import { Certificate, CertificateValidation } from "aws-cdk-lib/aws-certificatemanager";
+import { BuildSpec, EventAction, FilterGroup, GitHubSourceCredentials, LinuxBuildImage, Project, Source } from "aws-cdk-lib/aws-codebuild";
+import { Artifact, ArtifactPath, Pipeline, PipelineType } from "aws-cdk-lib/aws-codepipeline";
+import { CodeBuildAction, CodeStarConnectionsSourceAction, EcsDeployAction, GitHubSourceAction, ManualApprovalAction } from "aws-cdk-lib/aws-codepipeline-actions";
 import { Vpc } from "aws-cdk-lib/aws-ec2";
 import { Repository } from "aws-cdk-lib/aws-ecr";
 import {
@@ -122,6 +125,128 @@ export class InfraStack extends cdk.Stack {
     });
 
     targetGroup.addTarget(service);
+
+    const githubUserName = "dougbrierley"
+    const githubRepository = "F2F"
+
+    const gitHubSource = Source.gitHub({
+      owner: githubUserName,
+      repo: githubRepository,
+    });
+
+    const project = new Project(this, 'Streamlit Farm to Fork', {
+      projectName: `${this.stackName}`,
+      source: gitHubSource,
+      environment: {
+        buildImage: LinuxBuildImage.AMAZON_LINUX_2_5,
+        privileged: true
+      },
+      environmentVariables: {
+        'cluster_name': {
+          value: `${cluster.clusterName}`
+        },
+        'ecr_repo_uri': {
+          value: `${repo.repositoryUri}`
+        }
+      },
+      badge: true,
+      buildSpec: BuildSpec.fromObject({
+        version: "0.2",
+        phases: {
+          pre_build: {
+            commands: [
+              'env',
+              'export tag=latest'
+            ]
+          },
+          build: {
+            commands: [
+              'cd streamlit',
+              `docker build -t $ecr_repo_uri:$tag .`,
+              // 'aws ecr get-login --no-include-email',
+              'docker push $ecr_repo_uri:$tag'
+            ]
+          },
+          post_build: {
+            commands: [
+              'echo "in post-build stage"',
+              'cd ..',
+              "printf '[{\"name\":\"flask-app\",\"imageUri\":\"%s\"}]' $ecr_repo_uri:$tag > imagedefinitions.json",
+              "pwd; ls -al; cat imagedefinitions.json"
+            ]
+          }
+        },
+        artifacts: {
+          files: [
+            'imagedefinitions.json'
+          ]
+        }
+      })
+    });
+
+    const sourceOutput = new Artifact();
+    const buildOutput = new Artifact();
+    const sourceAction = new CodeStarConnectionsSourceAction({
+      actionName: 'github_source',
+      owner: githubUserName,
+      repo: githubRepository,
+      branch: 'main',
+      connectionArn: 'arn:aws:codestar-connections:eu-west-2:850434255294:connection/1d9da8cd-514b-4630-945f-ce20a7a7cece',
+      output: sourceOutput,
+      triggerOnPush: true,
+    });
+
+    const buildAction = new CodeBuildAction({
+      actionName: 'codebuild',
+      project: project,
+      input: sourceOutput,
+      outputs: [buildOutput],
+    });
+
+    // const manualApprovalAction = new ManualApprovalAction({
+    //   actionName: 'approve',
+    // });
+
+    const deployAction = new EcsDeployAction({
+      actionName: 'deployAction',
+      service,
+      imageFile: new ArtifactPath(buildOutput, `imagedefinitions.json`)
+    });
+
+    new Pipeline(this, 'StreamlitFarmToForkPipeline', {
+      pipelineType: PipelineType.V2,
+      stages: [
+        {
+          stageName: 'source',
+          actions: [sourceAction],
+        },
+        {
+          stageName: 'build',
+          actions: [buildAction],
+        },
+        // {
+        //   stageName: 'approve',
+        //   actions: [manualApprovalAction],
+        // },
+        {
+          stageName: 'deploy-to-ecs',
+          actions: [deployAction],
+        }
+      ]
+    });
+
+    repo.grantPullPush(project.role!)
+    project.addToRolePolicy(new PolicyStatement({
+      actions: [
+        "ecs:describecluster",
+        "ecr:getauthorizationtoken",
+        "ecr:batchchecklayeravailability",
+        "ecr:batchgetimage",
+        "ecr:getdownloadurlforlayer"
+      ],
+      resources: [`${cluster.clusterArn}`],
+    }));
+
 
   }
 }
