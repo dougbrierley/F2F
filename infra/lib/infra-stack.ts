@@ -163,7 +163,7 @@ export class InfraStack extends cdk.Stack {
             commands: [
               'cd streamlit',
               `docker build -t $ecr_repo_uri:$tag .`,
-              // 'aws ecr get-login --no-include-email',
+              'aws ecr get-login --no-include-email',
               'docker push $ecr_repo_uri:$tag'
             ]
           },
