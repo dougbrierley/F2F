@@ -1,8 +1,9 @@
 import * as cdk from "aws-cdk-lib";
 import { Certificate, CertificateValidation } from "aws-cdk-lib/aws-certificatemanager";
-import { BuildSpec, EventAction, FilterGroup, GitHubSourceCredentials, LinuxBuildImage, Project, Source } from "aws-cdk-lib/aws-codebuild";
+import { BuildSpec, LinuxBuildImage, Project, Source } from "aws-cdk-lib/aws-codebuild";
 import { Artifact, ArtifactPath, Pipeline, PipelineType } from "aws-cdk-lib/aws-codepipeline";
-import { CodeBuildAction, CodeStarConnectionsSourceAction, EcsDeployAction, GitHubSourceAction, ManualApprovalAction } from "aws-cdk-lib/aws-codepipeline-actions";
+import { CodeBuildAction, CodeStarConnectionsSourceAction, EcsDeployAction } from "aws-cdk-lib/aws-codepipeline-actions";
+import { NotificationRule } from "aws-cdk-lib/aws-codestarnotifications";
 import { Vpc } from "aws-cdk-lib/aws-ec2";
 import { Repository } from "aws-cdk-lib/aws-ecr";
 import {
@@ -20,8 +21,10 @@ import {
   SslPolicy,
 } from "aws-cdk-lib/aws-elasticloadbalancingv2";
 import { Effect, ManagedPolicy, PolicyStatement, Role, ServicePrincipal } from "aws-cdk-lib/aws-iam";
-import { ARecord, CnameRecord, HostedZone, RecordTarget } from "aws-cdk-lib/aws-route53";
+import { ARecord, HostedZone, RecordTarget } from "aws-cdk-lib/aws-route53";
 import { LoadBalancerTarget } from "aws-cdk-lib/aws-route53-targets";
+import { SubscriptionProtocol, Topic } from "aws-cdk-lib/aws-sns";
+import { UrlSubscription } from "aws-cdk-lib/aws-sns-subscriptions";
 import { Construct } from "constructs";
 
 export class InfraStack extends cdk.Stack {
@@ -219,7 +222,7 @@ export class InfraStack extends cdk.Stack {
       imageFile: new ArtifactPath(buildOutput, `imagedefinitions.json`)
     });
 
-    new Pipeline(this, 'StreamlitFarmToForkPipeline', {
+    const pipeline = new Pipeline(this, 'StreamlitFarmToForkPipeline', {
       pipelineType: PipelineType.V2,
       stages: [
         {
@@ -253,6 +256,20 @@ export class InfraStack extends cdk.Stack {
       resources: [`${cluster.clusterArn}`],
     }));
 
+    const topic = new Topic(this, "OpsGenieTopic");
+    topic.addSubscription(new UrlSubscription(cdk.SecretValue.secretsManager("opsgenie-http").unsafeUnwrap(), {
+      protocol: SubscriptionProtocol.HTTPS
+    }))
+    new NotificationRule(this, "OpsRule", {
+      source: pipeline,
+      events: [
+        "codepipeline-pipeline-pipeline-execution-started",
+        "codepipeline-pipeline-pipeline-execution-failed",
+        "codepipeline-pipeline-pipeline-execution-succeeded",
+        "codepipeline-pipeline-manual-approval-needed",
+        "codepipeline-pipeline-manual-approval-succeeded"],
+      targets:[topic]
+    })
 
   }
 }
