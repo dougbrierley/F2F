@@ -147,6 +147,12 @@ export class InfraStack extends cdk.Stack {
         },
         'ecr_repo_uri': {
           value: `${repo.repositoryUri}`
+        },
+        'AWS_ACCOUNT_ID': {
+          value: `${this.account}`
+        },
+        'AWS_DEFAULT_REGION': {
+          value: `${this.region}`
         }
       },
       badge: true,
