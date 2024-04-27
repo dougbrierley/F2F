@@ -1,24 +1,31 @@
-import streamlit as st
-import pandas as pd
-import boto3
+"""
+Delivery Note page
+"""
+
 import json
-from functions import *
 import re
+import boto3
 from openpyxl.reader.excel import load_workbook
+from contacts_excel_dao import ContactsExcelParser
+from order_excel_dao import OrderExcelParser
+import streamlit as st
+from create_delivery_notes import create_delivery_notes
+from json_generators import generate_order_json
+
 
 st.set_page_config(page_title="Delivery Notes Generator")
 
-hide_streamlit_style = """
+HIDE_STREAMLIT_STYLE = """
             <style>
             #MainMenu {visibility: hidden;}
             footer {visibility: hidden;}
             </style>
             """
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+st.markdown(HIDE_STREAMLIT_STYLE, unsafe_allow_html=True)
 
 st.title("Delivery Notes Generator")
 
-instructions = """
+INSTRUCTIONS = """
 1. Download the weekly order Excel from the weekly link
 2. Rename the Excel to the format: OxFarmToFork spreadsheet week N - DD_MM_YYYY.xlsx
     - Where N is the week number and DD_MM_YYYY is the Monday of the order week
@@ -29,19 +36,21 @@ instructions = """
 4. Upload the order spreadsheet and the contacts spreadsheet below.
 5. Delivery notes are automatically generated. Click to download.
 """
-st.markdown(instructions)
+st.markdown(INSTRUCTIONS)
 
 
 order_sheet_file = st.file_uploader(
-    "Choose Weekly Order Excel. MUST be in format: OxFarmToFork spreadsheet week N - DD_MM_YYYY.xlsx",
+    "Choose Weekly Order Excel. MUST be in format: "
+    "OxFarmToFork spreadsheet week N - DD_MM_YYYY.xlsx",
     type="xlsx",
     accept_multiple_files=False,
 )
 if order_sheet_file:
-    expected_format = r"\d+ - \d{2}_\d{2}_\d{4}\.xlsx"
-    if not re.search(expected_format, order_sheet_file.name):
+    EXPECTED_FORMAT = r"\d+ - \d{2}_\d{2}_\d{4}\.xlsx"
+    if not re.search(EXPECTED_FORMAT, order_sheet_file.name):
         st.error(
-            "Invalid order sheet name. Please rename the file to the format: OxFarmToFork spreadsheet week N - DD_MM_YYYY.xlsx"
+            "Invalid order sheet name. Please rename the file to the format: "
+            "OxFarmToFork spreadsheet week N - DD_MM_YYYY.xlsx"
         )
 contacts = st.file_uploader(
     "Choose Contacts Excel", type="xlsx", accept_multiple_files=False
@@ -53,69 +62,42 @@ date = st.date_input("What's the delivery date?")
 if st.button("Generate Delivery Notes"):
     if order_sheet_file and contacts and date:
         st.markdown("---")
-        order_sheet = load_order_file(order_sheet_file)
 
-        contacts_workbook = load_workbook(contacts)
-        contact_sheet = contacts_workbook["Contacts"]
+        contacts_parser = ContactsExcelParser()
+        contacts_import = contacts_parser.parse(contacts)
+        contacts_import.validation_report.raise_error()
 
-        buyers, errors = contacts_uploader(contact_sheet)
+        order_parser = OrderExcelParser(contacts_import.buyers)
+        market_place_import = order_parser.parse(order_sheet_file, date)
+        market_place_import.validation_report.raise_error()
 
-        # Prepare the data for the reference number
-        # Extract the week number from the order_sheet name
+
         week_number_match = re.search(r"k (\d+)", order_sheet_file.name)
         if week_number_match:
             week_number = week_number_match.group(1)
         else:
-            st.error(
-                "Invalid order sheet name. Please use the format: OxFarmToFork spreadsheet week N - DD_MM_YYYY.xlsx"
-            )
-        year = str(date.year)[-2:]
+            st.error("Invalid order sheet name. Please use the format: OxFarmToFork spreadsheet week N - DD_MM_YYYY.xlsx")
 
-        orders, errors = orderify(order_sheet, buyers, errors)
+        order_data = create_delivery_notes(market_place_import.market_place, date, week_number)
 
-        if (errors.areErrors()):
-            st.error("Errors found in the order sheet. Please fix and try again.")
-            for error in errors.errors:
-                st.error(error)
+        order_data_json = generate_order_json(order_data)
 
-        all_orders: list[DeliveryNote]= []
-        i = 1
-        buyers_with_order: list[str] = []
-
-        # Iterate through the buyers and create the invoice data
-        for buyer in buyers:
-            order = DeliveryNote(date, buyer)
-
-            order.lines = [line for line in orders if line.buyer == buyer.key]
-            order.buyer.number = f"F2FD{week_number}{year}{i}"
-
-            if (len(order.lines) > 0):
-                all_orders.append(order)
-                buyers_with_order.append(buyer.name)
-
-            i += 1
-
-
-        final_json_data = {"orders": [order.toJSON() for order in all_orders]}
-        invoice_data_json = json.dumps(final_json_data)
-
-        print(invoice_data_json)
+        print(order_data_json)
 
         Lambda = boto3.client("lambda", region_name="eu-west-2")
         response = Lambda.invoke(
             FunctionName="arn:aws:lambda:eu-west-2:850434255294:function:create_orders",
             InvocationType="RequestResponse",
             LogType="Tail",
-            # ClientContext='str_jsoning',
-            Payload=invoice_data_json,
-            # Qualifier='string'
+            Payload=order_data_json,
         )
         result = json.loads(response["Payload"].read().decode("utf-8"))
 
         i = 0
         for link in result["links"]:
             encoded_link = link.replace(" ", "%20")
-            st.markdown(f"[{buyers_with_order[i]} Delivery Notes]({encoded_link})")
+            st.markdown(
+                f"[{i} Delivery Notes]({encoded_link})")
             i += 1
 
         links_data = {
@@ -123,16 +105,14 @@ if st.button("Generate Delivery Notes"):
             "name": f"{date.strftime('%Y-%m-%d')} Delivery Notes",
         }
         links_json = json.dumps(links_data)
-        zip = Lambda.invoke(
+        zipped = Lambda.invoke(
             FunctionName="arn:aws:lambda:eu-west-2:850434255294:function:zipper",
             InvocationType="RequestResponse",
             LogType="Tail",
-            # ClientContext='str_jsoning',
             Payload=links_json,
-            # Qualifier='string'
         )
-        zip = json.loads(zip["Payload"].read().decode("utf-8"))
-        encoded_link = zip["zip"].replace(" ", "%20")
+        zipped = json.loads(zipped["Payload"].read().decode("utf-8"))
+        encoded_link = zipped["zip"].replace(" ", "%20")
         st.link_button("Download All Notes", encoded_link)
     else:
         st.warning(
