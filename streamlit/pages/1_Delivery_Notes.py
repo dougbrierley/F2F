@@ -82,7 +82,6 @@ if st.button("Generate Delivery Notes"):
 
         order_data_json = generate_order_json(order_data)
 
-        print(order_data_json)
 
         Lambda = boto3.client("lambda", region_name="eu-west-2")
         response = Lambda.invoke(
@@ -94,14 +93,18 @@ if st.button("Generate Delivery Notes"):
         result = json.loads(response["Payload"].read().decode("utf-8"))
 
         i = 0
-        for link in result["links"]:
+        links = []
+
+        for college, link in result["links"].items():
             encoded_link = link.replace(" ", "%20")
+            links.append(link)
             st.markdown(
-                f"[{i} Delivery Notes]({encoded_link})")
+                f"[{college} Delivery Notes]({encoded_link})")
             i += 1
 
+
         links_data = {
-            "links": result["links"],
+            "links": links,
             "name": f"{date.strftime('%Y-%m-%d')} Delivery Notes",
         }
         links_json = json.dumps(links_data)

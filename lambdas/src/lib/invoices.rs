@@ -2,6 +2,7 @@ use printpdf::{ImageRotation, ImageTransform, PdfDocumentReference, Px};
 use printpdf::{Color, IndirectFontRef, Mm, PdfDocument, PdfLayerReference, Rgb};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::BufWriter;
 
@@ -674,11 +675,13 @@ fn add_total(
 
 pub async fn create_invoices_s3(
     invoices: Vec<&Invoice>,
-) -> Result<Vec<String>, Box<dyn std::error::Error>> {
-    let mut s3_objects = Vec::<String>::new();
+) -> Result<HashMap<String, String>, Box<dyn std::error::Error>> {
+    let mut s3_objects = HashMap::new();
     for order in invoices {
         match create_invoice_s3(order).await {
-            Ok(s3_object) => s3_objects.push(generate_link(&s3_object)),
+            Ok(s3_object) => {
+                s3_objects.insert(order.buyer.name.clone(), generate_link(&s3_object));
+            }
             Err(e) => {
                 return Err(e);
             }
