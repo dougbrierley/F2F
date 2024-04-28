@@ -78,9 +78,9 @@ if st.button("Generate Delivery Notes"):
         else:
             st.error("Invalid order sheet name. Please use the format: OxFarmToFork spreadsheet week N - DD_MM_YYYY.xlsx")
 
-        order_data = create_delivery_notes(market_place_import.market_place, date, week_number)
+        delivery_notes = create_delivery_notes(market_place_import.market_place, date, week_number)
 
-        order_data_json = generate_order_json(order_data)
+        delivery_notes_json_export = generate_order_json(delivery_notes)
 
 
         Lambda = boto3.client("lambda", region_name="eu-west-2")
@@ -88,7 +88,7 @@ if st.button("Generate Delivery Notes"):
             FunctionName="arn:aws:lambda:eu-west-2:850434255294:function:create_orders",
             InvocationType="RequestResponse",
             LogType="Tail",
-            Payload=order_data_json,
+            Payload=delivery_notes_json_export,
         )
         result = json.loads(response["Payload"].read().decode("utf-8"))
 
