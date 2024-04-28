@@ -120,6 +120,7 @@ class ContactsExcelParser(ExcelParser):
         """"
         Takes the contacts file path and returns the buyers with all their information
         """
+        self._reset_errors()
         contacts_sheet = self._load_worksheet_from_excel(file, "Contacts")
         headers_index = self._parse_headers(contacts_sheet)
         buyers = self._contacts_parser(contacts_sheet, headers_index)

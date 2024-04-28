@@ -6,6 +6,21 @@ import openpyxl
 import numpy as np
 from domain import ValidationError, Buyer, ValidationReport, Order, Seller, MarketPlace, MarketPlaceImport
 import streamlit as st
+from datetime import datetime
+
+
+class ExcelCoords:
+    row: int
+    col: int
+    _A = ord("A")
+
+    def __init__(self, row: int, col: int):
+        self.row = row
+        self.col = col
+
+    def __str__(self):
+        col_letter = chr(self._A + self.col)
+        return f"{col_letter}{self.row}"
 
 
 # def load(file_path: str) -> MarketPlaceImport:
@@ -42,6 +57,21 @@ class ExcelParser:
                 f"Expected {worksheet_name} worksheet, but it does not exist."
             )
         return worksheet
+
+    def _date_extractor(self, file_name: str) -> datetime:
+        try:
+            order_sheet_name = str(file_name)
+            date_str = order_sheet_name.split(" - ")[-1].split(".")[0]
+            dateobj = datetime.strptime(date_str, "%d_%m_%Y")
+            return dateobj
+        except ValueError:
+            self.validation_errors.append(
+                ValidationError(
+                    f"Failed to extract date from order sheet: {file_name}, make sure the file name is in the format '...N - dd_mm_yyyy.xlsx")
+            )
+
+    def _reset_errors(self):
+        self.validation_errors = []
 
 
 class OrderExcelParser(ExcelParser):
@@ -139,7 +169,7 @@ class OrderExcelParser(ExcelParser):
 
         return header_dict, buyer_keys
 
-    def _parse_quantity(self, quantity: str, headers_dict: dict[str, int]) -> float:
+    def _parse_quantity(self, quantity: str, coords: ExcelCoords) -> float:
         """Parses the quantity from the row
 
         Args:
@@ -155,11 +185,11 @@ class OrderExcelParser(ExcelParser):
             float_quantity = float(cleaned)
         except ValueError:
             self.validation_errors.append(
-                ValidationError(f"Quantity in row {quantity} could not be parsed."))
+                ValidationError(f"Quantity at {coords} could not be parsed."))
 
         return float_quantity
 
-    def _parse_price(self, price: str, row: int) -> int:
+    def _parse_price(self, price: str, coords: ExcelCoords) -> int:
         """Parse the price from string using regex etc.
 
         Args:
@@ -174,7 +204,7 @@ class OrderExcelParser(ExcelParser):
             float_price = float(cleaned)
         except ValueError:
             self.validation_errors.append(
-                ValidationError(f"Price in row {row} could not be parsed."))
+                ValidationError(f"Price at {coords} could not be parsed."))
             return 0
 
         rounded = np.round(float_price * 100, decimals=0)
@@ -184,7 +214,7 @@ class OrderExcelParser(ExcelParser):
         except ValueError:
             self.validation_errors.append(
                 ValidationError(
-                    f"""Price could not be parsed in row {row},
+                    f"""Price could not be parsed at {coords},
                     check that it has only 2 decimal places."""
                 )
             )
@@ -209,7 +239,7 @@ class OrderExcelParser(ExcelParser):
         Returns:
             list[Order]: _description_
         """
-        i = self._header_row + 1
+        i = self._header_row
 
         orders: list[Order] = []
 
@@ -221,9 +251,12 @@ class OrderExcelParser(ExcelParser):
             if row[headers_dict["price"]] is None or row[headers_dict["price"]] == "":
                 continue
 
-            for index, buyer in buyers.items():
+            price = self._parse_price(row[headers_dict["price"]],
+                                      ExcelCoords(row=i, col=headers_dict["price"]))
 
-                quantity = self._parse_quantity(row[index], headers_dict)
+            for index, buyer in buyers.items():
+                quantity = self._parse_quantity(
+                    row[index], ExcelCoords(row=i, col=index))
 
                 if quantity == 0:
                     continue
@@ -232,7 +265,6 @@ class OrderExcelParser(ExcelParser):
                 produce = row[headers_dict["produce"]]
                 variant = row[headers_dict["variant"]]
                 unit = row[headers_dict["unit"]]
-                price = self._parse_price(row[headers_dict["price"]], row)
                 vat_rate = self.VAT_RATE
 
                 orders.append(
@@ -260,7 +292,6 @@ class OrderExcelParser(ExcelParser):
             week=week_number
         )
 
-
         return market_place
 
     def _parse_week(self, order_sheet_name: str) -> int:
@@ -276,14 +307,20 @@ class OrderExcelParser(ExcelParser):
 
         return week_number
 
-    def parse(self, file, delivery_date) -> MarketPlaceImport:
+    def parse(self, file, delivery_date, use_file_name_for_date=False) -> MarketPlaceImport:
         """
         Parses order data from the spreadsheet to a clean domain
         """
+        # Reset errors
+        self._reset_errors()
         order_sheet = self._load_worksheet_from_excel(file, "GROWERS' PAGE")
         headers_dict, buyers = self._parse_order_headers(order_sheet)
-        market_place = self._parse_orders(order_sheet, headers_dict, buyers, delivery_date, file.name)
-        validation_report = ValidationReport(source=file.name, errors=self.validation_errors)
+        if use_file_name_for_date:
+            delivery_date = self._date_extractor(file.name)
+        market_place = self._parse_orders(
+            order_sheet, headers_dict, buyers, delivery_date, file.name)
+        validation_report = ValidationReport(
+            source=file.name, errors=self.validation_errors)
         return MarketPlaceImport(
             market_place=market_place,
             validation_report=validation_report

@@ -18,6 +18,9 @@ class Seller:
 
 @dataclass(frozen=True)
 class Buyer:
+    """
+    Buyer dataclass
+    """
     name: str
     key: str
     address_line_1: str
@@ -29,6 +32,9 @@ class Buyer:
 
 @dataclass(frozen=True)
 class Order:
+    """
+    Complete order dataclass
+    """
     produce: str
     unit: str
     seller: Seller
@@ -42,6 +48,9 @@ class Order:
 
 @dataclass(frozen=True)
 class DeliveryNote:
+    """
+    Delivery note dataclass
+    """
     note_date: date
     buyer: Buyer
     reference: str
@@ -50,15 +59,22 @@ class DeliveryNote:
 
 @dataclass(frozen=True)
 class Invoice:
+    """
+    Invoice dataclass
+    """
     invoice_date: date
     buyer: Buyer
     due_date: date
     reference: str
+    invoice_number: str
     orders: frozenset[Order]
 
 
 @dataclass(frozen=True)
 class MarketPlace:
+    """
+    Marketplace data class with all the information from one week of orders
+    """
     sellers: frozenset[Seller]
     buyers: frozenset[Buyer]
     orders: frozenset[Order]
@@ -85,9 +101,11 @@ class ValidationReport:
         """
         Creates error message with new lines
         """
-        errors_origin = f"Errors detected in {self.source}"
-        errors = '\n'.join(self.errors)
-        error_message = errors_origin + "\n" + errors
+        if len(self.errors) == 1:
+            errors_origin = f"{len(self.errors)} error detected in {self.source}"
+        errors_origin = f"{len(self.errors)} errors detected in {self.source}"
+        errors = '\n\n* '.join([error.message for error in self.errors])
+        error_message = errors_origin + "\n\n* " + errors
         return error_message
 
     def raise_error(self):

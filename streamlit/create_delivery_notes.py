@@ -18,13 +18,18 @@ def create_delivery_notes(market_place: MarketPlace, delivery_date: date, week_n
         print(buyer)
 
         orders = [order for order in market_place.orders if order.buyer == buyer]
+
+        if len(orders) == 0:
+            i-=1
+            continue
+        
         if orders:
             all_delivery_notes.append(
                 DeliveryNote(
                     note_date=delivery_date,
                     buyer=buyer,
                     orders=frozenset(orders),
-                    reference=f"F2FD{week_number}{delivery_date.strftime('%Y')}{i}"
+                    reference=f"F2FD{week_number}{delivery_date.strftime('%Y')[2:4]}{i}"
                 )
             )
 

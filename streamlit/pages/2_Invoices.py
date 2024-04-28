@@ -73,7 +73,7 @@ if st.button("Generate Invoices"):
         markets = []
 
         for sheet in order_sheets:
-            market_place_import = order_parser.parse(sheet, date)
+            market_place_import = order_parser.parse(sheet, date, use_file_name_for_date=True)
             market_place_import.validation_report.raise_error()
             markets.append(market_place_import.market_place)
 

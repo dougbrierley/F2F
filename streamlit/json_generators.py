@@ -27,7 +27,7 @@ def generate_order_json(orders: list[DeliveryNote]) -> list[dict]:
             if line.variant is None:
                 variant = ""
             else:
-                variant = line.variant[:20]
+                variant = line.variant[:35]
 
             order = {
                 "produce"   : line.produce,
@@ -67,7 +67,7 @@ def generate_invoices_json(invoices: list[Invoice]) -> list[dict]:
             "city"      : invoice.buyer.city,
             "postcode"  : invoice.buyer.postcode,
             "country"   : invoice.buyer.country,
-            "number"    : invoice.reference
+            "number"    : invoice.invoice_number
         }
 
         lines = []
@@ -76,11 +76,11 @@ def generate_invoices_json(invoices: list[Invoice]) -> list[dict]:
             if line.variant is None:
                 variant = ""
             else:
-                variant = line.variant[:20]
+                variant = " - " + line.variant[:35]
 
 
             order = {
-                "item"      : line.produce + " - " + variant,
+                "item"      : line.produce + variant,
                 "price"     : line.price,
                 "qty"       : line.quantity,
                 "seller"    : line.seller.name,
