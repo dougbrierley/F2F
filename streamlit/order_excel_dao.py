@@ -50,7 +50,7 @@ class OrderExcelParser(ExcelParser):
     """
     buyers: list[Buyer]
     _header_row = 3
-    VAT_RATE = 0.2
+    VAT_RATE = 0.0
 
     def __init__(self, buyers: list[Buyer]):
         self.buyers = buyers
