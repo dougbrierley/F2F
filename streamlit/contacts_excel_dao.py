@@ -124,6 +124,7 @@ class ContactsExcelParser(ExcelParser):
         contacts_sheet = self._load_worksheet_from_excel(file, "Contacts")
         headers_index = self._parse_headers(contacts_sheet)
         buyers = self._contacts_parser(contacts_sheet, headers_index)
-        contacts_validation_report = ValidationReport(file.name, self.validation_errors)
+        contacts_validation_report = ValidationReport(
+            file.name, self.validation_errors)
         contacts_import = ContactsImport(buyers, contacts_validation_report)
         return contacts_import

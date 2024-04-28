@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 import openpyxl.workbook
 import openpyxl.worksheet
 import openpyxl.worksheet.worksheet
@@ -6,7 +7,6 @@ import openpyxl
 import numpy as np
 from domain import ValidationError, Buyer, ValidationReport, Order, Seller, MarketPlace, MarketPlaceImport
 import streamlit as st
-from datetime import datetime
 
 
 class ExcelCoords:

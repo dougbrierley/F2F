@@ -22,7 +22,7 @@ def create_delivery_notes(market_place: MarketPlace, delivery_date: date, week_n
         if len(orders) == 0:
             i-=1
             continue
-        
+
         if orders:
             all_delivery_notes.append(
                 DeliveryNote(

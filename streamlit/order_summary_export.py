@@ -7,4 +7,5 @@ def generate_csv_export(marketplace: MarketPlace):
     """
     Function that calculates the summary 
     """
-    marketplace.orders 
+    # marketplace.orders
+    pass 
