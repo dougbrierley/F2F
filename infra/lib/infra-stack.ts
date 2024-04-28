@@ -106,9 +106,9 @@ export class InfraStack extends cdk.Stack {
     new cdk.CfnOutput(this, "ServiceURL", { value: "https://" +  domainName});
 
     const fargateTaskDefinition = new FargateTaskDefinition(this, "InfraTaskDefinition", {
-      memoryLimitMiB: 2048,
-      cpu: 1024,
-      taskRole
+      memoryLimitMiB: 1024,
+      cpu: 512,
+      taskRole,
     });
 
     const container = fargateTaskDefinition.addContainer("InfraContainer", {
@@ -125,6 +125,12 @@ export class InfraStack extends cdk.Stack {
       taskDefinition: fargateTaskDefinition,
       desiredCount: 1,
       assignPublicIp: true,
+      capacityProviderStrategies: [
+        {
+          capacityProvider: 'FARGATE_SPOT',
+          weight: 1,
+        }
+      ]
     });
 
     targetGroup.addTarget(service);
