@@ -406,7 +406,7 @@ pub async fn create_buyer_orders_s3(
 pub async fn create_buyer_order_s3(order: &Order) -> Result<S3Object, Box<dyn std::error::Error>> {
     let doc = create_buyer_order_pdf(order);
 
-    let bucket_name = "serverless-s3-dev-ftfbucket-xcri21szhuya";
+    let bucket_name = "farm-to-fork-pdfs";
     let key = format!(
         "Order {} {} {}.pdf",
         order.buyer.number, order.buyer.name, order.date

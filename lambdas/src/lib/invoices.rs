@@ -700,7 +700,7 @@ pub fn create_invoices(invoices: Vec<&Invoice>) {
 pub async fn create_invoice_s3(invoice: &Invoice) -> Result<S3Object, Box<dyn std::error::Error>> {
     let doc = create_invoice_pdf(invoice);
 
-    let bucket_name = "serverless-s3-dev-ftfbucket-xcri21szhuya";
+    let bucket_name = "farm-to-fork-pdfs";
     let key = format!(
         "Invoice {} {} {}.pdf",
         invoice.buyer.number, invoice.buyer.name, invoice.date
