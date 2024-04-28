@@ -86,7 +86,7 @@ async fn func(event: LambdaEvent<Incoming>) -> Result<Value, Error> {
         .map(|link| link.split("/").last().unwrap())
         .collect::<Vec<&str>>();
 
-    let bucket = "serverless-s3-dev-ftfbucket-xcri21szhuya".to_string();
+    let bucket = "farm-to-fork-pdfs".to_string();
     let zip = zip_keys(&keys, &bucket, &name).await;
 
     match zip {

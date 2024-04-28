@@ -1,6 +1,7 @@
 use printpdf::{Color, IndirectFontRef, LinkAnnotation, Mm, PdfDocument, PdfLayerReference, Rgb};
 use printpdf::{ImageRotation, ImageTransform, PdfDocumentReference, Px};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufWriter;
 use std::path::Path;
@@ -386,11 +387,13 @@ pub fn create_buyer_orders(orders: Vec<&Order>) {
 
 pub async fn create_buyer_orders_s3(
     orders: Vec<&Order>,
-) -> Result<Vec<String>, Box<dyn std::error::Error>> {
-    let mut s3_objects = Vec::<String>::new();
+) -> Result<HashMap<String, String>, Box<dyn std::error::Error>> {
+    let mut s3_objects = HashMap::new();
     for order in orders {
         match create_buyer_order_s3(order).await {
-            Ok(s3_object) => s3_objects.push(generate_link(&s3_object)),
+            Ok(s3_object) => {
+                s3_objects.insert(order.buyer.name.clone(), generate_link(&s3_object));
+            },
             Err(e) => {
                 return Err(e);
             }
@@ -403,7 +406,7 @@ pub async fn create_buyer_orders_s3(
 pub async fn create_buyer_order_s3(order: &Order) -> Result<S3Object, Box<dyn std::error::Error>> {
     let doc = create_buyer_order_pdf(order);
 
-    let bucket_name = "serverless-s3-dev-ftfbucket-xcri21szhuya";
+    let bucket_name = "farm-to-fork-pdfs";
     let key = format!(
         "Order {} {} {}.pdf",
         order.buyer.number, order.buyer.name, order.date

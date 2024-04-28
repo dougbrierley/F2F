@@ -130,7 +130,7 @@ export class InfraStack extends cdk.Stack {
           capacityProvider: 'FARGATE_SPOT',
           weight: 1,
         }
-      ]
+      ],
     });
 
     targetGroup.addTarget(service);
