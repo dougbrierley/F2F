@@ -30,7 +30,7 @@ st.title("Invoice Generator")
 INSTRUCTIONS = '''
 1. Download all the weekly order Excels from the weekly links
 2. Rename the Excel to the format: OxFarmToFork spreadsheet week N - DD_MM_YYYY.xlsx
-    - Where N is the week number and DD_MM_YYYY is the Monday of the order week
+    - Where N is the week number and DD_MM_YYYY is the delivery date
 3. Update the contacts spreadsheet with all contact info.
     Note:
     - Do not change the column titles
