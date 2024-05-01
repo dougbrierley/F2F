@@ -13,7 +13,7 @@ class SellerSummary:
     seller: Seller
     total_sold: float
 
-def generate_csv_export(market_places: list[MarketPlace]) -> pd.DataFrame:
+def generate_seller_summaries(market_places: list[MarketPlace]) -> pd.DataFrame:
     """
     Function that calculates the summary 
     """

@@ -78,7 +78,7 @@ if st.button("Generate Invoices"):
             market_place_import.validation_report.raise_error()
             markets.append(market_place_import.market_place)
 
-        summary = generate_csv_export(markets)
+        summary = generate_seller_summaries(markets)
         st.dataframe(summary)
         invoices = create_invoices(markets, date)
         order_data_json = generate_invoices_json(invoices)
