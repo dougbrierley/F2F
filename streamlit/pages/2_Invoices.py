@@ -8,6 +8,7 @@ from openpyxl.reader.excel import load_workbook
 from contacts_excel_dao import ContactsExcelParser
 from order_excel_dao import OrderExcelParser
 from json_generators import generate_invoices_json
+from order_summary_export import generate_csv_export
 import streamlit as st
 
 
@@ -77,6 +78,8 @@ if st.button("Generate Invoices"):
             market_place_import.validation_report.raise_error()
             markets.append(market_place_import.market_place)
 
+        summary = generate_csv_export(markets)
+        st.dataframe(summary)
         invoices = create_invoices(markets, date)
         order_data_json = generate_invoices_json(invoices)
 
