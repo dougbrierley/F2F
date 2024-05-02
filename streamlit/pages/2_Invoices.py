@@ -8,7 +8,7 @@ from openpyxl.reader.excel import load_workbook
 from contacts_excel_dao import ContactsExcelParser
 from order_excel_dao import OrderExcelParser
 from json_generators import generate_invoices_json
-from order_summary_export import generate_csv_export
+from order_summary_export import generate_seller_summaries
 import streamlit as st
 
 
