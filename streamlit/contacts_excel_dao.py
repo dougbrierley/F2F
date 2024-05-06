@@ -61,6 +61,7 @@ class ContactsExcelParser(ExcelParser):
         """
         try:
             item = row[key]
+            item = str(item).strip()
         except IndexError:
             return ""
         if (item is None or item == "") and can_be_null is False:
@@ -94,7 +95,7 @@ class ContactsExcelParser(ExcelParser):
             # Skip rows that do not have a buyer
             if row[headers_dict["buyer_key"]] is None or row[headers_dict["buyer_full_name"]] == "":
                 continue
-
+            
             buyer = Buyer(
                 key=self._load_cell(
                     row, headers_dict["buyer_key"], row_number, can_be_null=False),
