@@ -4,6 +4,19 @@ Module to upload the contacts to buyers
 from domain import ValidationError, Buyer, ContactsImport, ValidationReport
 from openpyxl.worksheet.worksheet import Worksheet
 from order_excel_dao import ExcelParser
+from dataclasses import dataclass
+from typing import Optional
+
+
+@dataclass(frozen=True)
+class _PropertyExcelColumnIndexes:
+    buyer_key: Optional[int]
+    buyer_full_name: Optional[int]
+    address_line_1: Optional[int]
+    address_line_2: Optional[int]
+    city: Optional[int]
+    postcode: Optional[int]
+    country: Optional[int]
 
 
 class ContactsExcelParser(ExcelParser):
@@ -12,48 +25,32 @@ class ContactsExcelParser(ExcelParser):
     """
     _header_row = 1
 
-    def _parse_headers(
+    def retrieve_property_name_excel_column_indexes(
             self,
             contacts_sheet: Worksheet
-    ) -> tuple[dict[str, int], dict[int, str], list[ValidationError]]:
+    ) -> _PropertyExcelColumnIndexes:
         "Load in and validate the headers"
 
-        headers = contacts_sheet[self._header_row]
-        headers = [cell.value for cell in headers]
+        headers = tuple(cell.value for cell in contacts_sheet[self._header_row])
 
-        column_mapping = {
-            "Buyer Key as in Spreadsheet": "buyer_key",
-            "Buyer Full Name": "buyer_full_name",
-            "Address Line 1": "address_line_1",
-            "Address Line 2": "address_line_2",
-            "City": "city",
-            "Postcode": "postcode",
-            "Country": "country",
-        }
-
-        contact_header_dict = {
-            "buyer_key": None,
-            "buyer_full_name": None,
-            "address_line_1": None,
-            "address_line_2": None,
-            "city": None,
-            "postcode": None,
-            "country": None,
-        }
-
-        for key, value in column_mapping.items():
+        def retrieve_column_index(excel_header_name: str) -> Optional[int]:
             try:
-                index_of_header = headers.index(key)
-
+                return headers.index(excel_header_name)
             except ValueError:
                 self.validation_errors.append(
                     ValidationError(
-                        f"Header {key} could not be found in the contacts sheet.")
+                        f"Header {excel_header_name} could not be found in the contacts sheet.")
                 )
 
-            contact_header_dict[value] = index_of_header
-
-        return contact_header_dict
+        return _PropertyExcelColumnIndexes(
+            buyer_key=retrieve_column_index("Buyer Key as in Spreadsheet"),
+            buyer_full_name=retrieve_column_index("Buyer Full Name"),
+            address_line_1=retrieve_column_index("Address Line 1"),
+            address_line_2=retrieve_column_index("Address Line 2"),
+            city=retrieve_column_index("City"),
+            postcode=retrieve_column_index("Postcode"),
+            country=retrieve_column_index("Country"),
+        )
 
     def _load_cell(self, row: tuple, key: int, row_number: int, can_be_null: bool = True) -> str:
         """
@@ -75,10 +72,10 @@ class ContactsExcelParser(ExcelParser):
         return item
 
     def _contacts_parser(
-        self,
-        contacts_sheet: Worksheet,
-        headers_dict: dict[str, int],
-    ) -> tuple[list[Buyer], list[ValidationError]]:
+            self,
+            contacts_sheet: Worksheet,
+            property_excel_column_indexes: _PropertyExcelColumnIndexes,
+    ) -> frozenset[Buyer]:
         """
         This function takes in the contacts dataframe and returns a
         list of all the buyers.
@@ -92,29 +89,28 @@ class ContactsExcelParser(ExcelParser):
             row_number = row_number + 1
 
             # Skip rows that do not have a buyer
-            if row[headers_dict["buyer_key"]] is None or row[headers_dict["buyer_full_name"]] == "":
+            if row[property_excel_column_indexes.buyer_key] is None or row[
+                property_excel_column_indexes.buyer_full_name] == "": #Weak condition
                 continue
 
-            buyer = Buyer(
+            buyers.append(Buyer(
                 key=self._load_cell(
-                    row, headers_dict["buyer_key"], row_number, can_be_null=False),
+                    row, property_excel_column_indexes.buyer_key, row_number, can_be_null=False),
                 name=self._load_cell(
-                    row, headers_dict["buyer_full_name"], row_number, can_be_null=False),
+                    row, property_name_to_excel_column_index["buyer_full_name"], row_number, can_be_null=False),
                 address_line_1=self._load_cell(
-                    row, headers_dict["address_line_1"], row_number, can_be_null=False),
+                    row, property_name_to_excel_column_index["address_line_1"], row_number, can_be_null=False),
                 city=self._load_cell(
-                    row, headers_dict["city"], row_number, can_be_null=False),
+                    row, property_name_to_excel_column_index["city"], row_number, can_be_null=False),
                 postcode=self._load_cell(
-                    row, headers_dict["postcode"], row_number, can_be_null=False),
+                    row, property_name_to_excel_column_index["postcode"], row_number, can_be_null=False),
                 country=self._load_cell(
-                    row, headers_dict["country"], row_number, can_be_null=True),
+                    row, property_name_to_excel_column_index["country"], row_number, can_be_null=True),
                 address_line_2=self._load_cell(
-                    row, headers_dict["address_line_2"], row_number, can_be_null=True)
-            )
+                    row, property_name_to_excel_column_index["address_line_2"], row_number, can_be_null=True)
+            ))
 
-            buyers.append(buyer)
-
-        return buyers
+        return frozenset(buyers)
 
     def parse(self, file) -> ContactsImport:
         """"
@@ -122,9 +118,9 @@ class ContactsExcelParser(ExcelParser):
         """
         self._reset_errors()
         contacts_sheet = self._load_worksheet_from_excel(file, "Contacts")
-        headers_index = self._parse_headers(contacts_sheet)
-        buyers = self._contacts_parser(contacts_sheet, headers_index)
-        contacts_validation_report = ValidationReport(
-            file.name, self.validation_errors)
-        contacts_import = ContactsImport(buyers, contacts_validation_report)
-        return contacts_import
+
+        buyers = self._contacts_parser(contacts_sheet,
+                                       property_excel_column_indexes=self.retrieve_property_name_excel_column_indexes(
+                                           contacts_sheet))
+        contacts_validation_report = ValidationReport(file.name, self.validation_errors)
+        return ContactsImport(buyers, contacts_validation_report)

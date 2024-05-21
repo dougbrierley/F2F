@@ -11,7 +11,7 @@ from order_excel_dao import OrderExcelParser
 import streamlit as st
 from create_delivery_notes import create_delivery_notes
 from json_generators import generate_order_json
-
+from streamlit.domain import MarketPlace, Buyer
 
 st.set_page_config(page_title="Delivery Notes Generator")
 
@@ -59,18 +59,23 @@ date = st.date_input("What's the delivery date?")
 
 # prepare order number parts
 
+def _retrieve_buyers() -> frozenset[Buyer]:
+    contacts_parser = ContactsExcelParser()
+    contacts_import = contacts_parser.parse(contacts)
+    contacts_import.validation_report.raise_error()
+    return contacts_import.buyers
+
+def _retrieve_market_place(buyers: frozenset[Buyer]) -> MarketPlace:
+    order_parser = OrderExcelParser(buyers)
+    market_place_import = order_parser.parse(order_sheet_file, date)
+    market_place_import.validation_report.raise_error()
+    return market_place_import
+
 if st.button("Generate Delivery Notes"):
     if order_sheet_file and contacts and date:
         st.markdown("---")
-
-        contacts_parser = ContactsExcelParser()
-        contacts_import = contacts_parser.parse(contacts)
-        contacts_import.validation_report.raise_error()
-
-        order_parser = OrderExcelParser(contacts_import.buyers)
-        market_place_import = order_parser.parse(order_sheet_file, date)
-        market_place_import.validation_report.raise_error()
-
+        
+        market_place = _retrieve_market_place(buyers=_retrieve_buyers())
 
         week_number_match = re.search(r"k (\d+)", order_sheet_file.name)
         if week_number_match:
@@ -78,7 +83,7 @@ if st.button("Generate Delivery Notes"):
         else:
             st.error("Invalid order sheet name. Please use the format: OxFarmToFork spreadsheet week N - DD_MM_YYYY.xlsx")
 
-        delivery_notes = create_delivery_notes(market_place_import.market_place, date, week_number)
+        delivery_notes = create_delivery_notes(market_place, date, week_number)
 
         delivery_notes_json_export = generate_order_json(delivery_notes)
 
@@ -92,15 +97,13 @@ if st.button("Generate Delivery Notes"):
         )
         result = json.loads(response["Payload"].read().decode("utf-8"))
 
-        i = 0
         links = []
 
         for college, link in result["links"].items():
-            encoded_link = link.replace(" ", "%20")
+            replace_spaces_with_encoded_space = link.replace(" ", "%20")
             links.append(link)
             st.markdown(
-                f"[{college} Delivery Notes]({encoded_link})")
-            i += 1
+                f"[{college} Delivery Notes]({replace_spaces_with_encoded_space})")
 
 
         links_data = {
@@ -115,8 +118,8 @@ if st.button("Generate Delivery Notes"):
             Payload=links_json,
         )
         zipped = json.loads(zipped["Payload"].read().decode("utf-8"))
-        encoded_link = zipped["zip"].replace(" ", "%20")
-        st.link_button("Download All Notes", encoded_link)
+        replace_spaces_with_encoded_space = zipped["zip"].replace(" ", "%20")
+        st.link_button("Download All Notes", replace_spaces_with_encoded_space)
     else:
         st.warning(
             "Please upload weekly order spreadsheet and contacts spreadsheet and select a date."
