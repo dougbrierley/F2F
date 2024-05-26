@@ -56,6 +56,15 @@ class DeliveryNote:
     reference: str
     orders: frozenset[Order]
 
+@dataclass(frozen=True)
+class PickList:
+    """
+    Pick list dataclass
+    """
+    monday_of_order_week: date
+    seller: Seller
+    reference: str
+    orders: frozenset[Order]
 
 @dataclass(frozen=True)
 class Invoice:

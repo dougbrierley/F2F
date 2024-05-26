@@ -1,7 +1,7 @@
 "JSON Generators for the Streamlit app"
 
 import json
-from domain import DeliveryNote, Invoice
+from domain import DeliveryNote, Invoice, PickList
 
 def generate_order_json(orders: list[DeliveryNote]) -> list[dict]:
     """
@@ -102,3 +102,46 @@ def generate_invoices_json(invoices: list[Invoice]) -> list[dict]:
         okay["invoices"].append(order)
 
     return json.dumps(okay, indent=4)
+
+def generate_pick_list_json(pick_lists: list[PickList]) -> list[dict]:
+    """
+    Generate JSON for the pick lists
+    """
+
+    pick_lists_json = {"orders": []}
+
+    for pick_list in pick_lists:
+        seller = {
+            "name"      : pick_list.seller.name,
+        }
+
+        lines = []
+
+        for line in pick_list.orders:
+            if line.variant is None:
+                variant = ""
+            else:
+                variant = line.variant[:35]
+
+            order = {
+                "produce"   : line.produce,
+                "variant"   : variant,
+                "unit"      : line.unit,
+                "price"     : line.price,
+                "qty"       : line.quantity,
+                "buyer"    : line.buyer.name,
+            }
+
+            lines.append(order)
+
+
+        pick_list_json = {
+            "date": pick_list.monday_of_order_week.strftime("%Y-%m-%d"),
+            "seller": seller,
+            "lines": lines,
+        }
+
+
+        pick_lists_json["orders"].append(pick_list_json)
+
+    return json.dumps(pick_lists_json, indent=4)
