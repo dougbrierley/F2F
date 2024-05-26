@@ -36,6 +36,10 @@ name="create_orders"
 path="src/bin/orders.rs"
 
 [[bin]]
+name="create_picks"
+path="src/bin/picks.rs"
+
+[[bin]]
 name="create_invoices"
 path="src/bin/invoices.rs"
 
