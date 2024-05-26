@@ -34,7 +34,7 @@ export class InfraStack extends cdk.Stack {
     const domainName = "oxfarmtofork.org";
 
     const vpc = new Vpc(this, "InfraVpc", {
-      maxAzs: 2,
+      maxAzs: 1,
     })
 
     const cluster = new Cluster(this, "InfraCluster", {
@@ -106,8 +106,8 @@ export class InfraStack extends cdk.Stack {
     new cdk.CfnOutput(this, "ServiceURL", { value: "https://" +  domainName});
 
     const fargateTaskDefinition = new FargateTaskDefinition(this, "InfraTaskDefinition", {
-      memoryLimitMiB: 1024,
-      cpu: 512,
+      memoryLimitMiB: 512,
+      cpu: 256,
       taskRole,
     });
 
