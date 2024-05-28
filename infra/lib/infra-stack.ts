@@ -4,7 +4,7 @@ import { BuildSpec, LinuxBuildImage, Project, Source } from "aws-cdk-lib/aws-cod
 import { Artifact, ArtifactPath, Pipeline, PipelineType } from "aws-cdk-lib/aws-codepipeline";
 import { CodeBuildAction, CodeStarConnectionsSourceAction, EcsDeployAction } from "aws-cdk-lib/aws-codepipeline-actions";
 import { NotificationRule } from "aws-cdk-lib/aws-codestarnotifications";
-import { Vpc } from "aws-cdk-lib/aws-ec2";
+import { IpProtocol, Vpc } from "aws-cdk-lib/aws-ec2";
 import { Repository } from "aws-cdk-lib/aws-ecr";
 import {
   AwsLogDriver,
@@ -16,6 +16,7 @@ import {
 import {
   ApplicationLoadBalancer,
   ApplicationProtocol,
+  IpAddressType,
   ListenerAction,
   ListenerCertificate,
   SslPolicy,
@@ -34,7 +35,9 @@ export class InfraStack extends cdk.Stack {
     const domainName = "oxfarmtofork.org";
 
     const vpc = new Vpc(this, "InfraVpc", {
-      maxAzs: 1,
+      maxAzs: 2,
+      natGateways: 1,
+      ipProtocol: IpProtocol.DUAL_STACK
     })
 
     const cluster = new Cluster(this, "InfraCluster", {
@@ -63,6 +66,7 @@ export class InfraStack extends cdk.Stack {
       vpc: vpc,
       internetFacing: true,
       idleTimeout: cdk.Duration.seconds(120),
+      ipAddressType: IpAddressType.DUAL_STACK
     });
 
     const hostedZone = HostedZone.fromLookup(this, "InfraHostedZone", {
