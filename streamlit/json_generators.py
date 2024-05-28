@@ -108,7 +108,7 @@ def generate_pick_list_json(pick_lists: list[PickList]) -> list[dict]:
     Generate JSON for the pick lists
     """
 
-    pick_lists_json = {"orders": []}
+    pick_lists_json = {"picks": []}
 
     for pick_list in pick_lists:
         seller = {
@@ -129,7 +129,7 @@ def generate_pick_list_json(pick_lists: list[PickList]) -> list[dict]:
                 "unit"      : line.unit,
                 "price"     : line.price,
                 "qty"       : line.quantity,
-                "buyer"    : line.buyer.name,
+                "buyer"    : line.buyer.name
             }
 
             lines.append(order)
@@ -138,10 +138,11 @@ def generate_pick_list_json(pick_lists: list[PickList]) -> list[dict]:
         pick_list_json = {
             "date": pick_list.monday_of_order_week.strftime("%Y-%m-%d"),
             "seller": seller,
+            "reference"    : pick_list.reference,   
             "lines": lines,
         }
 
 
-        pick_lists_json["orders"].append(pick_list_json)
+        pick_lists_json["picks"].append(pick_list_json)
 
     return json.dumps(pick_lists_json, indent=4)
