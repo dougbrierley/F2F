@@ -160,12 +160,12 @@ pub fn create_buyer_order_pdf(pick: &Pick) -> PdfDocumentReference {
 
     current_layer.end_text_section();
 
-    current_layer.use_text(&pick.seller.name, 20.0, Mm(10.0), Mm(225.0), &medium);
+    current_layer.use_text(&pick.seller.name, 20.0, Mm(10.0), Mm(248.0), &medium);
 
     current_layer.begin_text_section();
 
     current_layer.use_text(
-        "If you have any questions, please contact: oxfarmtoform@gfo.org.uk",
+        "If you have any questions, please contact: oxfarmtofork@gfo.org.uk",
         8.0,
         Mm(10.0),
         Mm(10.0),
@@ -178,7 +178,7 @@ pub fn create_buyer_order_pdf(pick: &Pick) -> PdfDocumentReference {
         printpdf::Actions::uri("mailto:oxfarmtofork@gfo.org.uk".to_string()),
         None,
     ));
-    y_tracker_mm -= 18.0;
+    y_tracker_mm -= 30.0;
 
     current_layer.set_fill_color(Color::Rgb(Rgb::new(0.0, 0.04, 0.0, None)));
     current_layer.use_text("PICK #", 12.0, Mm(120.0), Mm(y_tracker_mm), &oswald);
@@ -401,7 +401,7 @@ pub async fn create_pick_s3(pick: &Pick) -> Result<S3Object, Box<dyn std::error:
 
     let bucket_name = "farm-to-fork-pdfs";
     let key = format!(
-        "Pick {} {}.pdf",
+        "Pick List - {} {}.pdf",
         pick.seller.name, pick.date
     );
 
