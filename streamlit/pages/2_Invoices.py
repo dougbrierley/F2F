@@ -121,5 +121,5 @@ if st.button("Generate Invoices"):
 
 else:
     st.warning(
-        "Please upload weekly order spreadsheet and contacts spreadsheet and select a date.")
+        "Please upload weekly order spreadsheets and contacts spreadsheet and select a date.")
     st.stop()

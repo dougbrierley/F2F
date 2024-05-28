@@ -82,8 +82,6 @@ if st.button("Generate Pick Lists"):
 
         pick_lists_json_export = generate_pick_list_json(pick_lists)
 
-        print(pick_lists_json_export)
-
         Lambda = boto3.client("lambda", region_name="eu-west-2")
         response = Lambda.invoke(
             FunctionName="arn:aws:lambda:eu-west-2:850434255294:function:create_picks",
