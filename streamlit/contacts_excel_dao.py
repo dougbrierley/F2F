@@ -71,7 +71,7 @@ class ContactsExcelParser(ExcelParser):
                 )
             )
             return ""
-        if item is None:
+        if item is None or item == "None":
             return ""
         return item
 
