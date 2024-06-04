@@ -75,8 +75,8 @@ fn add_table_header(current_layer: &PdfLayerReference, font: &IndirectFontRef, y
     current_layer.begin_text_section();
     current_layer.use_text("PRODUCE", font_size, Mm(10.0), Mm(y_tracker_mm), &font);
     current_layer.use_text("DESCRIPTION", font_size, Mm(50.0), Mm(y_tracker_mm), &font);
-    current_layer.use_text("UNIT", font_size, Mm(115.0), Mm(y_tracker_mm), &font);
-    current_layer.use_text("QTY", font_size, Mm(140.0), Mm(y_tracker_mm), &font);
+    current_layer.use_text("QTY", font_size, Mm(115.0), Mm(y_tracker_mm), &font);
+    current_layer.use_text("UNIT", font_size, Mm(135.0), Mm(y_tracker_mm), &font);
     current_layer.use_text("PRICE", font_size, Mm(160.0), Mm(y_tracker_mm), &font);
     current_layer.use_text("TOTAL", font_size, Mm(180.0), Mm(y_tracker_mm), &font);
     current_layer.end_text_section();
@@ -250,16 +250,16 @@ fn add_pick_line(
         &font,
     );
     current_layer.use_text(
-        &pick_line.unit,
+        &pick_line.qty.to_string(),
         font_size,
         Mm(115.0),
         Mm(y_tracker_mm),
         &font,
     );
     current_layer.use_text(
-        &pick_line.qty.to_string(),
+        &pick_line.unit,
         font_size,
-        Mm(140.0),
+        Mm(135.0),
         Mm(y_tracker_mm),
         &font,
     );
@@ -278,6 +278,7 @@ fn add_pick_line(
         &font,
     );
     current_layer.end_text_section();
+    add_hr(current_layer, y_tracker_mm, 0.1);
 }
 
 fn group_by_seller(lines: &Vec<PickLine>) -> std::collections::HashMap<&str, Vec<PickLine>> {
@@ -327,7 +328,7 @@ fn add_pick_lines_to_pdf(
             font,
         );
         *y_tracker_mm -= 1.0;
-        add_hr(current_layer, *y_tracker_mm, 0.5);
+        add_hr(current_layer, *y_tracker_mm, 1.0);
         *y_tracker_mm -= 6.0;
         for order_line in v.iter() {
             if *y_tracker_mm < 30.0 {

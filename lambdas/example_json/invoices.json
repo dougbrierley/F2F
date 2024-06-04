@@ -8,10 +8,10 @@
       "buyer": {
         "name": "Big Man",
         "address1": "1234 Main St",
-        "address2": "Apt 123",
+        "address2": "",
         "city": "Springfield",
         "postcode": "62701",
-        "country": "USA",
+        "country": "",
         "number": "VCC1812"
       },
       "lines": [

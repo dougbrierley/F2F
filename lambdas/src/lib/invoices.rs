@@ -163,15 +163,15 @@ fn add_receiver(
 
     current_layer.set_line_height(12.0);
     // write two lines (one line break)
-    current_layer.write_text("Velocity Cycle Couriers Limited", &font);
+    current_layer.write_text("Good Food Oxfordshire Ltd", &font);
     current_layer.add_line_break();
-    current_layer.write_text("Co. Reg. 06502183", &font);
+    current_layer.write_text("Co. Reg. 11001098", &font);
     current_layer.add_line_break();
-    current_layer.write_text("Starling Bank", &font);
+    current_layer.write_text("Bank: Lloyds Bank", &font);
     current_layer.add_line_break();
-    current_layer.write_text("Account Number: 19501950", &font);
+    current_layer.write_text("Sort Code: 30-90-90", &font);
     current_layer.add_line_break();
-    current_layer.write_text("Sort Code: 608371", &font);
+    current_layer.write_text("Account Number: 30333060", &font);
 
     current_layer.end_text_section();
 }
@@ -234,7 +234,7 @@ pub fn create_invoice_pdf(invoice: &Invoice) -> PdfDocumentReference {
 
     current_layer.begin_text_section();
 
-    current_layer.use_text("Company Registration No: 06502183. Registered Office: Attention: Jake Swinhoe, 38 Kennington Road, Kennington, Oxford, OX1 5PB, GBR.", 8.0, Mm(10.0), Mm(10.0), &normal_roboto);
+    current_layer.use_text("Company Registration No: 11001098. Registered Office: Make Space Oxford, 1 Aristotle Lane, Oxford, England, OX2 6TP.", 8.0, Mm(10.0), Mm(10.0), &normal_roboto);
 
     current_layer.set_line_height(8.0);
     current_layer.set_word_spacing(0.0);
@@ -325,7 +325,7 @@ pub fn create_invoice_pdf(invoice: &Invoice) -> PdfDocumentReference {
     details_x = Mm(145.0);
 
     current_layer.use_text(
-        "Velocity Cycle Couriers Limited",
+        "Good Food Oxfordshire LTD",
         font_size_details,
         details_x,
         Mm(y_tracker_mm),
@@ -333,7 +333,7 @@ pub fn create_invoice_pdf(invoice: &Invoice) -> PdfDocumentReference {
     );
     y_tracker_mm -= 4.0;
     current_layer.use_text(
-        "Attention: Jake Swinhoe",
+        "Makespace",
         font_size_details,
         details_x,
         Mm(y_tracker_mm),
@@ -341,15 +341,7 @@ pub fn create_invoice_pdf(invoice: &Invoice) -> PdfDocumentReference {
     );
     y_tracker_mm -= 4.0;
     current_layer.use_text(
-        "38 Kennington Road",
-        font_size_details,
-        details_x,
-        Mm(y_tracker_mm),
-        &normal_roboto,
-    );
-    y_tracker_mm -= 4.0;
-    current_layer.use_text(
-        "Kennington",
+        "1 Aristotle Lane",
         font_size_details,
         details_x,
         Mm(y_tracker_mm),
@@ -365,15 +357,7 @@ pub fn create_invoice_pdf(invoice: &Invoice) -> PdfDocumentReference {
     );
     y_tracker_mm -= 4.0;
     current_layer.use_text(
-        "OX1 5PB",
-        font_size_details,
-        details_x,
-        Mm(y_tracker_mm),
-        &normal_roboto,
-    );
-    y_tracker_mm -= 4.0;
-    current_layer.use_text(
-        "GBR",
+        "OX2 6TP",
         font_size_details,
         details_x,
         Mm(y_tracker_mm),
@@ -426,6 +410,7 @@ pub fn create_invoice_pdf(invoice: &Invoice) -> PdfDocumentReference {
         &normal_roboto,
         &invoice.lines,
         &mut y_tracker_mm,
+        &oswald
     );
     let summary = InvoiceSummary::from_invoice(invoice);
     
@@ -565,6 +550,7 @@ fn add_invoice_lines_to_pdf(
     font: &IndirectFontRef,
     invoice_lines: &Vec<InvoiceLine>,
     y_tracker_mm: &mut f32,
+    header_font: &IndirectFontRef,
 ) {
     *y_tracker_mm -= 7.0;
 
@@ -576,7 +562,7 @@ fn add_invoice_lines_to_pdf(
         if *y_tracker_mm < 30.0 {
             *current_layer = add_page(doc);
             *y_tracker_mm = 277.0;
-            add_table_header(&current_layer, font, *y_tracker_mm);
+            add_table_header(&current_layer, header_font, *y_tracker_mm);
             *y_tracker_mm -= 7.0;
         }
 
@@ -596,7 +582,7 @@ fn add_invoice_lines_to_pdf(
             if *y_tracker_mm < 30.0 {
                 *current_layer = add_page(doc);
                 *y_tracker_mm = 277.0;
-                add_table_header(&current_layer, font, *y_tracker_mm);
+                add_table_header(&current_layer, header_font, *y_tracker_mm);
                 *y_tracker_mm -= 7.0;
             }
             add_invoice_line(&current_layer, line, font, *y_tracker_mm);

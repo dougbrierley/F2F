@@ -157,7 +157,7 @@ pub fn create_buyer_order_pdf(order: &Order) -> PdfDocumentReference {
     current_layer.begin_text_section();
 
     current_layer.use_text(
-        "If you have any questions, please contact: hello@velocitycc.co.uk",
+        "If you have any questions, please contact: oxfarmtofork@gfo.org.uk",
         8.0,
         Mm(10.0),
         Mm(10.0),
@@ -167,7 +167,7 @@ pub fn create_buyer_order_pdf(order: &Order) -> PdfDocumentReference {
         printpdf::Rect::new(Mm(62.0), Mm(8.0), Mm(93.0), Mm(14.0)),
         None,
         None,
-        printpdf::Actions::uri("mailto:hello@velocitycc.co.uk".to_string()),
+        printpdf::Actions::uri("mailto:oxfarmtofork@gfo.org.uk".to_string()),
         None,
     ));
     y_tracker_mm -= 18.0;
