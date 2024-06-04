@@ -426,6 +426,7 @@ pub fn create_invoice_pdf(invoice: &Invoice) -> PdfDocumentReference {
         &normal_roboto,
         &invoice.lines,
         &mut y_tracker_mm,
+        &oswald
     );
     let summary = InvoiceSummary::from_invoice(invoice);
     
@@ -565,6 +566,7 @@ fn add_invoice_lines_to_pdf(
     font: &IndirectFontRef,
     invoice_lines: &Vec<InvoiceLine>,
     y_tracker_mm: &mut f32,
+    header_font: &IndirectFontRef,
 ) {
     *y_tracker_mm -= 7.0;
 
@@ -576,7 +578,7 @@ fn add_invoice_lines_to_pdf(
         if *y_tracker_mm < 30.0 {
             *current_layer = add_page(doc);
             *y_tracker_mm = 277.0;
-            add_table_header(&current_layer, font, *y_tracker_mm);
+            add_table_header(&current_layer, header_font, *y_tracker_mm);
             *y_tracker_mm -= 7.0;
         }
 
@@ -596,7 +598,7 @@ fn add_invoice_lines_to_pdf(
             if *y_tracker_mm < 30.0 {
                 *current_layer = add_page(doc);
                 *y_tracker_mm = 277.0;
-                add_table_header(&current_layer, font, *y_tracker_mm);
+                add_table_header(&current_layer, header_font, *y_tracker_mm);
                 *y_tracker_mm -= 7.0;
             }
             add_invoice_line(&current_layer, line, font, *y_tracker_mm);
