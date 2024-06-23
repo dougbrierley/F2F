@@ -3,7 +3,10 @@
 from datetime import date
 from domain import MarketPlace, DeliveryNote
 
-def create_delivery_notes(market_place: MarketPlace, delivery_date: date, week_number:int) -> list[DeliveryNote]:
+
+def create_delivery_notes(market_place: MarketPlace,
+                          delivery_date: date,
+                          week_number: int) ->list[DeliveryNote]:
     """
     Create the delivery notes for the buyers
     """
@@ -13,14 +16,15 @@ def create_delivery_notes(market_place: MarketPlace, delivery_date: date, week_n
     i = 0
 
     for buyer in market_place.buyers:
-        i+=1
+        i += 1
 
         print(buyer)
 
-        orders = [order for order in market_place.orders if order.buyer == buyer]
+        orders = [order for order in market_place.orders if order.buyer ==
+                  buyer and order.seller.name != "No Vice Ice"]
 
         if len(orders) == 0:
-            i-=1
+            i -= 1
             continue
 
         if orders:
