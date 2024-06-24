@@ -90,7 +90,7 @@ pub fn create_buyer_order_pdf(order: &Order) -> PdfDocumentReference {
         order.buyer.number, order.buyer.name, order.date
     );
     let (doc, page1, layer1) = PdfDocument::new(pdf_title, Mm(210.0), Mm(297.0), "Layer 1");
-    let current_layer = doc.get_page(page1).get_layer(layer1);
+    let mut current_layer = doc.get_page(page1).get_layer(layer1);
 
     let image_velocity = image::load_from_memory(VELOCITY_BYTES_IMAGE).unwrap();
     let image = printpdf::Image::from_dynamic_image(&image_velocity);
@@ -241,7 +241,8 @@ pub fn create_buyer_order_pdf(order: &Order) -> PdfDocumentReference {
     y_tracker_mm = 203.0;
     add_table_header(&current_layer, &oswald, y_tracker_mm);
     add_order_lines_to_pdf(
-        &current_layer,
+        &doc,
+        &mut current_layer,
         &normal_roboto,
         &order.lines,
         &mut y_tracker_mm,
@@ -320,8 +321,14 @@ fn group_by_seller(lines: &Vec<OrderLine>) -> std::collections::HashMap<&str, Ve
     grouped
 }
 
+fn add_page(doc: &PdfDocumentReference) -> PdfLayerReference {
+    let (page, layer) = doc.add_page(Mm(210.0), Mm(297.0), "layer new");
+    doc.get_page(page).get_layer(layer)
+}
+
 fn add_order_lines_to_pdf(
-    current_layer: &PdfLayerReference,
+    doc: &PdfDocumentReference,
+    current_layer: &mut PdfLayerReference,
     font: &IndirectFontRef,
     order_lines: &Vec<OrderLine>,
     y_tracker_mm: &mut f32,
@@ -332,6 +339,14 @@ fn add_order_lines_to_pdf(
 
     for (k, v) in grouped {
         *y_tracker_mm -= 3.0;
+        
+        if *y_tracker_mm < 30.0 {
+            *current_layer = add_page(doc);
+            *y_tracker_mm = 277.0;
+            add_table_header(&current_layer, font, *y_tracker_mm);
+            *y_tracker_mm -= 7.0;
+        }
+
         current_layer.use_text(k, 12.0, Mm(10.0), Mm(*y_tracker_mm), &font);
         current_layer.use_text(
             format_currency(total_per_order(&v)),
@@ -344,6 +359,12 @@ fn add_order_lines_to_pdf(
         add_hr(current_layer, *y_tracker_mm, 0.5);
         *y_tracker_mm -= 6.0;
         for order_line in v.iter() {
+            if *y_tracker_mm < 30.00 {
+                *current_layer = add_page(doc);
+                *y_tracker_mm = 277.0;
+                add_table_header(&current_layer, font, *y_tracker_mm);
+                *y_tracker_mm -= 7.0;
+            }
             add_order_line(current_layer, &order_line, font, *y_tracker_mm);
             *y_tracker_mm -= 6.0;
         }
