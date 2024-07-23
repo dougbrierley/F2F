@@ -17,7 +17,6 @@ def create_invoices(
     i = 0
     due_date = invoice_date + timedelta(days=14)
 
-    previous_month = (invoice_date - relativedelta(months=1)).strftime("%b")
     previous_month_number = (invoice_date - relativedelta(months=1)).strftime("%m")
 
     all_orders: list[Order] = []
@@ -43,8 +42,8 @@ def create_invoices(
                     due_date=due_date,
                     invoice_date=invoice_date,
                     orders=frozenset(orders),
-                    reference=f"F2F-{previous_month}",
-                    invoice_number=f"F2F{previous_month_number}{invoice_date.strftime('%Y')[2:4]}{i}",
+                    reference="F2F",
+                    invoice_number=f"F2F{invoice_date.strftime('%Y%m%d')}{i}",
                 )
             )
 
