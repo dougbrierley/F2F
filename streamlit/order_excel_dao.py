@@ -296,7 +296,7 @@ class OrderExcelParser(ExcelParser):
                         price=price,
                         quantity=quantity,
                         vat_rate=vat_rate,
-                        order_date=delivery_date,
+                        delivery_date=delivery_date,
                     )
                 )
 
@@ -329,7 +329,7 @@ class OrderExcelParser(ExcelParser):
         return week_number
 
     def parse(
-        self, file, delivery_date, use_file_name_for_date=False
+        self, file, delivery_date=None, use_file_name_for_date=False
     ) -> MarketPlaceImport:
         """
         Parses order data from the spreadsheet to a clean domain

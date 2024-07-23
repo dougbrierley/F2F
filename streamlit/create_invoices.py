@@ -17,8 +17,6 @@ def create_invoices(
     i = 0
     due_date = invoice_date + timedelta(days=14)
 
-    previous_month_number = (invoice_date - relativedelta(months=1)).strftime("%m")
-
     all_orders: list[Order] = []
 
     for market_place in market_places:

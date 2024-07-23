@@ -84,7 +84,7 @@ def generate_invoices_json(invoices: list[Invoice]) -> list[dict]:
                 "qty": line.quantity,
                 "seller": line.seller.name,
                 "vat_rate": line.vat_rate,
-                "date": line.order_date.strftime("%Y-%m-%d"),
+                "date": line.delivery_date.strftime("%Y-%m-%d"),
             }
 
             lines.append(order)
