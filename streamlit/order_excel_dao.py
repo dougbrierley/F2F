@@ -5,7 +5,15 @@ import openpyxl.worksheet
 import openpyxl.worksheet.worksheet
 import openpyxl
 import numpy as np
-from domain import ValidationError, Buyer, ValidationReport, Order, Seller, MarketPlace, MarketPlaceImport
+from domain import (
+    ValidationError,
+    Buyer,
+    ValidationReport,
+    Order,
+    Seller,
+    MarketPlace,
+    MarketPlaceImport,
+)
 import streamlit as st
 
 
@@ -25,15 +33,15 @@ class ExcelCoords:
 
 # def load(file_path: str) -> MarketPlaceImport:
 
+
 class ExcelParser:
     """Parse an excel file"""
 
     validation_errors: list[ValidationError] = []
 
     def _load_worksheet_from_excel(
-            self,
-            excel_file,
-            worksheet_name: str) -> openpyxl.worksheet.worksheet:
+        self, excel_file, worksheet_name: str
+    ) -> openpyxl.worksheet.worksheet:
         """Gets the worksheet from the workbook
 
         Args:
@@ -43,15 +51,15 @@ class ExcelParser:
         Returns:
             Worksheet: The worksheet
         """
-        workbook = openpyxl.load_workbook(
-            excel_file, data_only=True)
+        workbook = openpyxl.load_workbook(excel_file, data_only=True)
         try:
             worksheet = workbook[worksheet_name]
         except KeyError:
             st.error("Expected GROWERS' PAGE worksheet, but it does not exist.")
             self.validation_errors.append(
                 ValidationError(
-                    f"Expected {worksheet_name} worksheet, but it does not exist.")
+                    f"Expected {worksheet_name} worksheet, but it does not exist."
+                )
             )
             raise KeyError(
                 f"Expected {worksheet_name} worksheet, but it does not exist."
@@ -67,7 +75,8 @@ class ExcelParser:
         except ValueError:
             self.validation_errors.append(
                 ValidationError(
-                    f"Failed to extract date from order sheet: {file_name}, make sure the file name is in the format '...N - dd_mm_yyyy.xlsx")
+                    f"Failed to extract date from order sheet: {file_name}, make sure the file name is in the format '...N - dd_mm_yyyy.xlsx"
+                )
             )
 
     def _reset_errors(self):
@@ -78,6 +87,7 @@ class OrderExcelParser(ExcelParser):
     """
     Will parse the order sheet
     """
+
     buyers: list[Buyer]
     _header_row = 3
     VAT_RATE = 0.0
@@ -131,8 +141,7 @@ class OrderExcelParser(ExcelParser):
 
             except ValueError:
                 self.validation_errors.append(
-                    ValidationError(
-                        f"Header {key} could not be found in the sheet.")
+                    ValidationError(f"Header {key} could not be found in the sheet.")
                 )
 
             header_dict[value] = index_of_header
@@ -147,10 +156,12 @@ class OrderExcelParser(ExcelParser):
             current_buyer = headers[i]
 
             if i > 100:
-                self.validation_errors.append(ValidationError(
-                    """It looks like there were lots of buyers, check
+                self.validation_errors.append(
+                    ValidationError(
+                        """It looks like there were lots of buyers, check
                     that any headers without buyers are empty"""
-                ))
+                    )
+                )
 
             if current_buyer is None or current_buyer == "":
                 continue
@@ -160,7 +171,8 @@ class OrderExcelParser(ExcelParser):
             if current_buyer not in contact_list:
                 self.validation_errors.append(
                     ValidationError(
-                        f"Buyer {current_buyer} not found in contacts sheet.")
+                        f"Buyer {current_buyer} not found in contacts sheet."
+                    )
                 )
 
             current_buyer_object = self._find_buyer(current_buyer)
@@ -185,7 +197,8 @@ class OrderExcelParser(ExcelParser):
             float_quantity = float(cleaned)
         except ValueError:
             self.validation_errors.append(
-                ValidationError(f"Quantity at {coords} could not be parsed."))
+                ValidationError(f"Quantity at {coords} could not be parsed.")
+            )
 
         return float_quantity
 
@@ -204,7 +217,8 @@ class OrderExcelParser(ExcelParser):
             float_price = float(cleaned)
         except ValueError:
             self.validation_errors.append(
-                ValidationError(f"Price at {coords} could not be parsed."))
+                ValidationError(f"Price at {coords} could not be parsed.")
+            )
             return 0
 
         rounded = np.round(float_price * 100, decimals=0)
@@ -226,7 +240,7 @@ class OrderExcelParser(ExcelParser):
         headers_dict: dict[str, int],
         buyers: dict[int, Buyer],
         delivery_date: str,
-        name: str
+        name: str,
     ) -> list[Order]:
         """_summary_
 
@@ -245,18 +259,23 @@ class OrderExcelParser(ExcelParser):
 
         seller_set: set[Seller] = set()
 
-        for row in order_sheet.iter_rows(min_row=self._header_row+1, values_only=True):
+        for row in order_sheet.iter_rows(
+            min_row=self._header_row + 1, values_only=True
+        ):
             i += 1
 
             if row[headers_dict["price"]] is None or row[headers_dict["price"]] == "":
                 continue
 
-            price = self._parse_price(row[headers_dict["price"]],
-                                      ExcelCoords(row=i, col=headers_dict["price"]))
+            price = self._parse_price(
+                row[headers_dict["price"]],
+                ExcelCoords(row=i, col=headers_dict["price"]),
+            )
 
             for index, buyer in buyers.items():
                 quantity = self._parse_quantity(
-                    row[index], ExcelCoords(row=i, col=index))
+                    row[index], ExcelCoords(row=i, col=index)
+                )
 
                 if quantity == 0:
                     continue
@@ -277,7 +296,7 @@ class OrderExcelParser(ExcelParser):
                         price=price,
                         quantity=quantity,
                         vat_rate=vat_rate,
-                        order_date=delivery_date
+                        order_date=delivery_date,
                     )
                 )
 
@@ -289,7 +308,7 @@ class OrderExcelParser(ExcelParser):
             sellers=frozenset(seller_set),
             buyers=frozenset(self.buyers),
             orders=frozenset(orders),
-            week=week_number
+            week=week_number,
         )
 
         return market_place
@@ -302,12 +321,16 @@ class OrderExcelParser(ExcelParser):
         if week_number_match:
             week_number = week_number_match.group(1)
         else:
-            st.error("""Invalid order sheet name.
-                     Please use the format: OxFarmToFork spreadsheet week N - DD_MM_YYYY.xlsx""")
+            st.error(
+                """Invalid order sheet name.
+                     Please use the format: OxFarmToFork spreadsheet week N - DD_MM_YYYY.xlsx"""
+            )
 
         return week_number
 
-    def parse(self, file, delivery_date, use_file_name_for_date=False) -> MarketPlaceImport:
+    def parse(
+        self, file, delivery_date, use_file_name_for_date=False
+    ) -> MarketPlaceImport:
         """
         Parses order data from the spreadsheet to a clean domain
         """
@@ -318,10 +341,11 @@ class OrderExcelParser(ExcelParser):
         if use_file_name_for_date:
             delivery_date = self._date_extractor(file.name)
         market_place = self._parse_orders(
-            order_sheet, headers_dict, buyers, delivery_date, file.name)
+            order_sheet, headers_dict, buyers, delivery_date, file.name
+        )
         validation_report = ValidationReport(
-            source=file.name, errors=self.validation_errors)
+            source=file.name, errors=self.validation_errors
+        )
         return MarketPlaceImport(
-            market_place=market_place,
-            validation_report=validation_report
+            market_place=market_place, validation_report=validation_report
         )
