@@ -13,6 +13,7 @@ class Seller:
     """
     Seller dataclass
     """
+
     name: str
 
 
@@ -21,6 +22,7 @@ class Buyer:
     """
     Buyer dataclass
     """
+
     name: str
     key: str
     address_line_1: str
@@ -35,6 +37,7 @@ class Order:
     """
     Complete order dataclass
     """
+
     produce: str
     unit: str
     seller: Seller
@@ -51,26 +54,31 @@ class DeliveryNote:
     """
     Delivery note dataclass
     """
+
     note_date: date
     buyer: Buyer
     reference: str
     orders: frozenset[Order]
+
 
 @dataclass(frozen=True)
 class PickList:
     """
     Pick list dataclass
     """
+
     monday_of_order_week: date
     seller: Seller
     reference: str
     orders: frozenset[Order]
+
 
 @dataclass(frozen=True)
 class Invoice:
     """
     Invoice dataclass
     """
+
     invoice_date: date
     buyer: Buyer
     due_date: date
@@ -84,6 +92,7 @@ class MarketPlace:
     """
     Marketplace data class with all the information from one week of orders
     """
+
     sellers: frozenset[Seller]
     buyers: frozenset[Buyer]
     orders: frozenset[Order]
@@ -95,6 +104,7 @@ class ValidationError:
     """
     Error message for a validation error
     """
+
     message: str
 
 
@@ -103,6 +113,7 @@ class ValidationReport:
     """
     Holds and handles the validation errors
     """
+
     source: str
     errors: list[ValidationError]
 
@@ -113,7 +124,7 @@ class ValidationReport:
         if len(self.errors) == 1:
             errors_origin = f"{len(self.errors)} error detected in {self.source}"
         errors_origin = f"{len(self.errors)} errors detected in {self.source}"
-        errors = '\n\n* '.join([error.message for error in self.errors])
+        errors = "\n\n* ".join([error.message for error in self.errors])
         error_message = errors_origin + "\n\n* " + errors
         return error_message
 
@@ -122,10 +133,10 @@ class ValidationReport:
         checks for any errors, stops script and raises if there are any
         """
         if len(self.errors) == 0:
-            st.toast(f"No errors detected in {self.source}!", icon='✅')
+            st.toast(f"No errors detected in {self.source}!", icon="✅")
         else:
             error_message = self._generate_error_message()
-            st.error(error_message, icon='🚨')
+            st.error(error_message, icon="🚨")
             st.stop()
 
 
@@ -134,6 +145,7 @@ class MarketPlaceImport:
     """
     Class for the data out of the marketplace spreasheet
     """
+
     market_place: MarketPlace
     validation_report: ValidationReport
 
@@ -143,5 +155,6 @@ class ContactsImport:
     """
     Class for the data out of the contacts spreadsheet
     """
+
     buyers: frozenset[Buyer]
     validation_report: ValidationReport

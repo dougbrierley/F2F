@@ -4,9 +4,9 @@ from datetime import date
 from domain import MarketPlace, DeliveryNote
 
 
-def create_delivery_notes(market_place: MarketPlace,
-                          delivery_date: date,
-                          week_number: int) ->list[DeliveryNote]:
+def create_delivery_notes(
+    market_place: MarketPlace, delivery_date: date, week_number: int
+) -> list[DeliveryNote]:
     """
     Create the delivery notes for the buyers
     """
@@ -20,8 +20,11 @@ def create_delivery_notes(market_place: MarketPlace,
 
         print(buyer)
 
-        orders = [order for order in market_place.orders if order.buyer ==
-                  buyer and order.seller.name != "No Vice Ice"]
+        orders = [
+            order
+            for order in market_place.orders
+            if order.buyer == buyer and order.seller.name != "No Vice Ice"
+        ]
 
         if len(orders) == 0:
             i -= 1
@@ -33,7 +36,7 @@ def create_delivery_notes(market_place: MarketPlace,
                     note_date=delivery_date,
                     buyer=buyer,
                     orders=frozenset(orders),
-                    reference=f"F2FD{week_number}{delivery_date.strftime('%Y')[2:4]}{i}"
+                    reference=f"F2FD{week_number}{delivery_date.strftime('%Y')[2:4]}{i}",
                 )
             )
 

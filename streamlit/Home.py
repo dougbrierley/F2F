@@ -1,7 +1,6 @@
 import streamlit as st
 
-st.set_page_config(
-    page_title="Home")
+st.set_page_config(page_title="Home")
 
 st.write("# OxFarmToFork Logistics Generator")
 st.markdown("Welcome to the OxFarmToFork logistics generator.")

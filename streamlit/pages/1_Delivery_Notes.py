@@ -71,17 +71,19 @@ if st.button("Generate Delivery Notes"):
         market_place_import = order_parser.parse(order_sheet_file, date)
         market_place_import.validation_report.raise_error()
 
-
         week_number_match = re.search(r"k (\d+)", order_sheet_file.name)
         if week_number_match:
             week_number = week_number_match.group(1)
         else:
-            st.error("Invalid order sheet name. Please use the format: OxFarmToFork spreadsheet week N - DD_MM_YYYY.xlsx")
+            st.error(
+                "Invalid order sheet name. Please use the format: OxFarmToFork spreadsheet week N - DD_MM_YYYY.xlsx"
+            )
 
-        delivery_notes = create_delivery_notes(market_place_import.market_place, date, week_number)
+        delivery_notes = create_delivery_notes(
+            market_place_import.market_place, date, week_number
+        )
 
         delivery_notes_json_export = generate_order_json(delivery_notes)
-
 
         Lambda = boto3.client("lambda", region_name="eu-west-2")
         response = Lambda.invoke(
@@ -98,10 +100,8 @@ if st.button("Generate Delivery Notes"):
         for college, link in result["links"].items():
             encoded_link = link.replace(" ", "%20")
             links.append(link)
-            st.markdown(
-                f"[{college} Delivery Notes]({encoded_link})")
+            st.markdown(f"[{college} Delivery Notes]({encoded_link})")
             i += 1
-
 
         links_data = {
             "links": links,

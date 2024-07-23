@@ -5,7 +5,9 @@ from domain import MarketPlace, Invoice, Order
 from dateutil.relativedelta import relativedelta
 
 
-def create_invoices(market_places: list[MarketPlace], invoice_date: date) -> list[Invoice]:
+def create_invoices(
+    market_places: list[MarketPlace], invoice_date: date
+) -> list[Invoice]:
     """
     Create the invoices for the buyers
     """
@@ -16,8 +18,7 @@ def create_invoices(market_places: list[MarketPlace], invoice_date: date) -> lis
     due_date = invoice_date + timedelta(days=14)
 
     previous_month = (invoice_date - relativedelta(months=1)).strftime("%b")
-    previous_month_number = (
-        invoice_date - relativedelta(months=1)).strftime("%m")
+    previous_month_number = (invoice_date - relativedelta(months=1)).strftime("%m")
 
     all_orders: list[Order] = []
 
@@ -32,7 +33,7 @@ def create_invoices(market_places: list[MarketPlace], invoice_date: date) -> lis
         orders = [order for order in all_orders if order.buyer == buyer]
 
         if len(orders) == 0:
-            i-=1
+            i -= 1
             continue
 
         if orders:
@@ -43,7 +44,7 @@ def create_invoices(market_places: list[MarketPlace], invoice_date: date) -> lis
                     invoice_date=invoice_date,
                     orders=frozenset(orders),
                     reference=f"F2F-{previous_month}",
-                    invoice_number=f"F2F{previous_month_number}{invoice_date.strftime('%Y')[2:4]}{i}"
+                    invoice_number=f"F2F{previous_month_number}{invoice_date.strftime('%Y')[2:4]}{i}",
                 )
             )
 
