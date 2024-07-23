@@ -105,7 +105,7 @@ if st.button("Generate Pick Lists"):
 
         links_data = {
             "links": links,
-            "name": f"{date.strftime('%Y-%m-%d')} Delivery Notes",
+            "name": f"{date.strftime('%Y-%m-%d')} Pick Lists",
         }
         links_json = json.dumps(links_data)
         zipped = Lambda.invoke(
