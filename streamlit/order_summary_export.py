@@ -16,6 +16,7 @@ class SellerSummary:
     seller: Seller
     total_sold: float
 
+
 def aggregate_orders(market_places: list[MarketPlace]) -> pd.DataFrame:
     """
     Function that aggregates the orders
@@ -24,22 +25,27 @@ def aggregate_orders(market_places: list[MarketPlace]) -> pd.DataFrame:
     all_sellers: set[Seller] = set()
 
     for market_place in market_places:
-        all_orders.extend({"delivery_date": order.delivery_date.strftime("%Y-%m-%d"),
-                            "seller": order.seller.name,
-                            "buyer": order.buyer.name,
-                            "produce": order.produce, 
-                            "additional info": order.variant, 
-                            "quantity": order.quantity,
-                            "unit": order.unit,
-                            "price": order.price/100,  
-                            "total price": order.price/100 * order.quantity,
-                           } for order in market_place.orders)
+        all_orders.extend(
+            {
+                "delivery_date": order.delivery_date.strftime("%Y-%m-%d"),
+                "seller": order.seller.name,
+                "buyer": order.buyer.name,
+                "produce": order.produce,
+                "additional info": order.variant,
+                "quantity": order.quantity,
+                "unit": order.unit,
+                "price": order.price / 100,
+                "total price": order.price / 100 * order.quantity,
+            }
+            for order in market_place.orders
+        )
         all_sellers.update(market_place.sellers)
 
     # Save all_orders as a CSV file
     all_orders_df = pd.DataFrame(all_orders, index=None)
 
     return all_orders_df
+
 
 def generate_seller_summaries(market_places: list[MarketPlace]) -> pd.DataFrame:
     """

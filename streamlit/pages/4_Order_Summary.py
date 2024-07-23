@@ -1,14 +1,10 @@
-import json
+"""This script generates an order csv file from the weekly order spreadsheets and contacts spreadsheet uploaded by the user."""
+
 import re
 import datetime
-import boto3
-import pandas as pd
-from create_invoices import create_invoices
-from datetime import datetime, timedelta
-from openpyxl.reader.excel import load_workbook
+from datetime import datetime
 from contacts_excel_dao import ContactsExcelParser
 from order_excel_dao import OrderExcelParser
-from json_generators import generate_invoices_json
 from order_summary_export import aggregate_orders
 import streamlit as st
 
@@ -45,7 +41,7 @@ st.markdown(INSTRUCTIONS)
 @st.cache_data
 def convert_df_to_csv(df):
     """converts dataframe to csv and encodes it to utf-8 while caching to avoid re-computation"""
-    return df.to_csv(index=False).encode('utf-8')
+    return df.to_csv(index=False).encode("utf-8")
 
 
 order_sheets = st.file_uploader(
@@ -82,19 +78,17 @@ if st.button("Generate Order csv"):
         markets = []
 
         for sheet in order_sheets:
-            market_place_import = order_parser.parse(
-                sheet, use_file_name_for_date=True
-            )
+            market_place_import = order_parser.parse(sheet, use_file_name_for_date=True)
             market_place_import.validation_report.raise_error()
             markets.append(market_place_import.market_place)
 
         all_orders = aggregate_orders(markets)
 
         st.download_button(
-        label="Download Order csv",
-        data=convert_df_to_csv(all_orders),
-        file_name=f'Farm_to_Fork_Raw_Orders_created_{datetime.now().strftime("%Y-%m-%d")}.csv',
-        mime='text/csv',
+            label="Download Order csv",
+            data=convert_df_to_csv(all_orders),
+            file_name=f'Farm_to_Fork_Raw_Orders_created_{datetime.now().strftime("%Y-%m-%d")}.csv',
+            mime="text/csv",
         )
 
 else:
