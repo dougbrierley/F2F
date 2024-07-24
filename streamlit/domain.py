@@ -46,7 +46,7 @@ class Order:
     price: int = 0
     quantity: float = 0.0
     vat_rate: float = 0.0
-    order_date: Optional[date] = None
+    delivery_date: Optional[date] = None
 
 
 @dataclass(frozen=True)

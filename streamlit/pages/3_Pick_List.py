@@ -13,7 +13,7 @@ from json_generators import generate_pick_list_json
 import streamlit as st
 
 
-st.set_page_config(page_title="Delivery Notes Generator")
+st.set_page_config(page_title="Pick Lists Generator")
 
 HIDE_STREAMLIT_STYLE = """
             <style>
@@ -23,7 +23,7 @@ HIDE_STREAMLIT_STYLE = """
             """
 st.markdown(HIDE_STREAMLIT_STYLE, unsafe_allow_html=True)
 
-st.title("Pick List Generator")
+st.title("Pick Lists Generator")
 
 INSTRUCTIONS = """
 1. Download the weekly order Excel from the weekly link
