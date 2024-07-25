@@ -10,9 +10,8 @@ import streamlit as st
 
 
 # Set the feature flags
-feature_flags = {"delivery_fees": False}
 
-st.set_page_config(page_title="Invoice Generator")
+st.set_page_config(page_title="Order Summary Generator")
 
 hide_streamlit_style = """
             <style>
@@ -22,7 +21,7 @@ hide_streamlit_style = """
             """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-st.title("Invoice Generator")
+st.title("Order Summary Generator")
 INSTRUCTIONS = """
 1. Download all the weekly order Excels from the weekly links
 2. Rename the Excel to the format: OxFarmToFork spreadsheet week N - DD_MM_YYYY.xlsx
@@ -45,7 +44,7 @@ def convert_df_to_csv(df):
 
 
 order_sheets = st.file_uploader(
-    "Choose All Weekly Order Excels For Desired Invoice Period",
+    "Choose all order spreadsheets to be aggreagated",
     type="xlsx",
     accept_multiple_files=True,
 )
