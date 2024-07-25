@@ -18,8 +18,6 @@ def create_delivery_notes(
     for buyer in market_place.buyers:
         i += 1
 
-        print(buyer)
-
         orders = [
             order
             for order in market_place.orders
