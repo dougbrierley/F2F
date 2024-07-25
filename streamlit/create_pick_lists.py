@@ -1,7 +1,7 @@
 "Create the pick lists for the sellers"
 
 from datetime import date
-from domain import MarketPlace, PickList
+from domain import MarketPlace, PickList, Buyer, Order
 
 
 def create_pick_lists(
