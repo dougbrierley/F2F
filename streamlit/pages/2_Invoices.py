@@ -1,10 +1,7 @@
 import json
 import re
-import datetime
 import boto3
 from create_invoices import create_invoices
-from datetime import datetime, timedelta
-from openpyxl.reader.excel import load_workbook
 from contacts_excel_dao import ContactsExcelParser
 from order_excel_dao import OrderExcelParser
 from json_generators import generate_invoices_json
