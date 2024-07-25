@@ -56,7 +56,7 @@ def create_pick_lists(
                 PickList(
                     monday_of_order_week=monday_of_order_week,
                     seller=seller,
-                    orders=frozenset(orders),
+                    orders=list(orders),
                     reference=f"F2FP{week_number}{monday_of_order_week.strftime('%Y')[2:4]}{i}",
                 )
             )
