@@ -70,7 +70,7 @@ class PickList:
     monday_of_order_week: date
     seller: Seller
     reference: str
-    orders: list[Order]
+    orders: frozenset[Order]
 
 
 @dataclass(frozen=True)
