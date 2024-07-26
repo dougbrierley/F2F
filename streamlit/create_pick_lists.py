@@ -50,7 +50,7 @@ def create_pick_lists(
                     quantity=quantity
                 )
                 no_price_items.append(no_price)
-        orders.extend(no_price_items)
+            orders.extend(no_price_items)
         if orders:
             all_pick_lists.append(
                 PickList(
