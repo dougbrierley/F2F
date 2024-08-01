@@ -58,7 +58,7 @@ pub struct OrderLine {
 }
 
 fn total_per_order(lines: &Vec<OrderLine>) -> u32 {
-    lines.iter().map(|l| l.price * l.qty as u32).sum()
+    lines.iter().map(|l| (l.qty * l.price as f32) as u32).sum()
 }
 
 fn add_table_header(current_layer: &PdfLayerReference, font: &IndirectFontRef, y_tracker_mm: f32) {

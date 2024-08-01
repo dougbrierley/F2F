@@ -18,14 +18,19 @@ async fn main() -> Result<(), Error> {
 #[derive(Deserialize, Serialize, Debug)]
 struct Incoming {
     picks: Vec<Pick>,
+    totals: Option<bool>,
 }
 
 async fn func(event: LambdaEvent<Incoming>) -> Result<Value, Error> {
     let i: Vec<Pick> = event.payload.picks;
     tracing::info!("Received, {:?}", i);
     let refs: Vec<&Pick> = i.iter().map(|s| s).collect();
+    let totals: bool = match event.payload.totals  {
+        Some(total) => total,
+        None => true,
+    };
 
-    let links = match create_picks_s3(refs).await {
+    let links = match create_picks_s3(refs, totals).await {
         Ok(l) => l,
         Err(e) => {
             tracing::error!("Error: {}", e);
