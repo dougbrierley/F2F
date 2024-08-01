@@ -8,8 +8,7 @@ use std::path::Path;
 
 use crate::pdf::add_hr;
 use crate::utils::{
-    check_file_exists_and_is_json, format_currency, generate_link, upload_object,
-    S3Object,
+    check_file_exists_and_is_json, format_currency, generate_link, upload_object, S3Object,
 };
 
 use std::include_bytes;
@@ -63,8 +62,16 @@ pub struct PickLine {
     buyer: String,
 }
 
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct TotalLine {
+    produce: String,
+    variant: String,
+    unit: String,
+    qty: f32,
+}
+
 fn total_per_order(lines: &Vec<PickLine>) -> u32 {
-    lines.iter().map(|l| l.price * l.qty as u32).sum()
+    lines.iter().map(|l| (l.qty * l.price as f32) as u32).sum()
 }
 
 fn add_table_header(current_layer: &PdfLayerReference, font: &IndirectFontRef, y_tracker_mm: f32) {
@@ -84,17 +91,14 @@ fn add_table_header(current_layer: &PdfLayerReference, font: &IndirectFontRef, y
 }
 
 fn create_buyer_order(order: &Pick) {
-    let doc = create_buyer_order_pdf(order);
+    let doc = create_buyer_order_pdf(order, &false);
     let path_name = format!("generated/{}.pdf", order.seller.name);
     doc.save(&mut BufWriter::new(File::create(path_name).unwrap()))
         .unwrap();
 }
 
-pub fn create_buyer_order_pdf(pick: &Pick) -> PdfDocumentReference {
-    let pdf_title = format!(
-        "Pick {} {}.pdf",
-        pick.seller.name, pick.date
-    );
+pub fn create_buyer_order_pdf(pick: &Pick, totals: &bool) -> PdfDocumentReference {
+    let pdf_title = format!("Pick {} {}.pdf", pick.seller.name, pick.date);
     let (doc, page1, layer1) = PdfDocument::new(pdf_title, Mm(210.0), Mm(297.0), "Layer 1");
     let mut current_layer = doc.get_page(page1).get_layer(layer1);
 
@@ -218,6 +222,15 @@ pub fn create_buyer_order_pdf(pick: &Pick) -> PdfDocumentReference {
         &pick.lines,
         &mut y_tracker_mm,
     );
+    if totals.to_owned() {
+        add_totals_to_pdf(
+            &doc,
+            &mut current_layer,
+            &normal_roboto,
+            &pick.lines,
+            &mut y_tracker_mm,
+        );
+    }
     let total = total_per_order(&pick.lines);
     add_total(&current_layer, &medium, &oswald, y_tracker_mm, total);
 
@@ -281,6 +294,49 @@ fn add_pick_line(
     add_hr(current_layer, y_tracker_mm, 0.1);
 }
 
+fn add_total_line(
+    current_layer: &PdfLayerReference,
+    total_line: &TotalLine,
+    font: &IndirectFontRef,
+    y_tracker_mm: f32,
+) {
+    current_layer.set_font(&font, 10.0);
+
+    let font_size = 10.0;
+
+    current_layer.begin_text_section();
+    current_layer.use_text(
+        &total_line.produce,
+        font_size,
+        Mm(10.0),
+        Mm(y_tracker_mm),
+        &font,
+    );
+    current_layer.use_text(
+        &total_line.variant,
+        font_size,
+        Mm(50.0),
+        Mm(y_tracker_mm),
+        &font,
+    );
+    current_layer.use_text(
+        &total_line.qty.to_string(),
+        font_size,
+        Mm(180.0),
+        Mm(y_tracker_mm),
+        &font,
+    );
+    current_layer.use_text(
+        &total_line.unit,
+        font_size,
+        Mm(135.0),
+        Mm(y_tracker_mm),
+        &font,
+    );
+    current_layer.end_text_section();
+    add_hr(current_layer, y_tracker_mm, 0.1);
+}
+
 fn group_by_seller(lines: &Vec<PickLine>) -> std::collections::HashMap<&str, Vec<PickLine>> {
     let mut grouped = std::collections::HashMap::new();
 
@@ -293,9 +349,69 @@ fn group_by_seller(lines: &Vec<PickLine>) -> std::collections::HashMap<&str, Vec
     grouped
 }
 
+fn group_by_item(lines: &Vec<PickLine>) -> Vec<TotalLine> {
+    let mut grouped = std::collections::HashMap::new();
+
+    for line in lines {
+        let entry = grouped
+            .entry(format!("{},-{}-{}", line.produce, line.variant, line.unit))
+            .or_insert(TotalLine {
+                produce: line.produce.clone(),
+                variant: line.variant.clone(),
+                unit: line.unit.clone(),
+                qty: 0.0,
+            });
+        entry.qty += line.qty
+    }
+
+    grouped.values().cloned().collect()
+}
+
 fn add_page(doc: &PdfDocumentReference) -> PdfLayerReference {
     let (page, layer) = doc.add_page(Mm(210.0), Mm(297.0), "layer new");
     doc.get_page(page).get_layer(layer)
+}
+
+fn add_totals_to_pdf(
+    doc: &PdfDocumentReference,
+    current_layer: &mut PdfLayerReference,
+    font: &IndirectFontRef,
+    order_lines: &Vec<PickLine>,
+    y_tracker_mm: &mut f32,
+) {
+    *y_tracker_mm -= 7.0;
+
+    let grouped = group_by_item(order_lines);
+
+    *y_tracker_mm -= 3.0;
+
+    if *y_tracker_mm < 30.0 {
+        *current_layer = add_page(doc);
+        *y_tracker_mm = 277.0;
+        add_table_header(&current_layer, font, *y_tracker_mm);
+        *y_tracker_mm -= 7.0;
+    }
+
+    current_layer.use_text("Totals", 12.0, Mm(10.0), Mm(*y_tracker_mm), &font);
+    current_layer.use_text(
+        "Quantity",
+        10.0,
+        Mm(180.0),
+        Mm(*y_tracker_mm),
+        font,
+    );
+    *y_tracker_mm -= 1.0;
+    add_hr(current_layer, *y_tracker_mm, 1.0);
+    *y_tracker_mm -= 6.0;
+    for line in grouped {
+        if *y_tracker_mm < 30.0 {
+            *current_layer = add_page(doc);
+            *y_tracker_mm = 277.0;
+        }
+
+        add_total_line(current_layer, &line, font, *y_tracker_mm);
+        *y_tracker_mm -= 6.0;
+    }
 }
 
 fn add_pick_lines_to_pdf(
@@ -381,13 +497,14 @@ pub fn create_buyer_orders(orders: Vec<&Pick>) {
 
 pub async fn create_picks_s3(
     orders: Vec<&Pick>,
+    totals: bool,
 ) -> Result<HashMap<String, String>, Box<dyn std::error::Error>> {
     let mut s3_objects = HashMap::new();
     for order in orders {
-        match create_pick_s3(order).await {
+        match create_pick_s3(order, &totals).await {
             Ok(s3_object) => {
                 s3_objects.insert(order.seller.name.clone(), generate_link(&s3_object));
-            },
+            }
             Err(e) => {
                 return Err(e);
             }
@@ -397,14 +514,14 @@ pub async fn create_picks_s3(
     Ok(s3_objects)
 }
 
-pub async fn create_pick_s3(pick: &Pick) -> Result<S3Object, Box<dyn std::error::Error>> {
-    let doc = create_buyer_order_pdf(pick);
+pub async fn create_pick_s3(
+    pick: &Pick,
+    totals: &bool,
+) -> Result<S3Object, Box<dyn std::error::Error>> {
+    let doc = create_buyer_order_pdf(pick, &totals);
 
     let bucket_name = "farm-to-fork-pdfs";
-    let key = format!(
-        "{} Pick List {}.pdf",
-        pick.seller.name, pick.date
-    );
+    let key = format!("{} Pick List {}.pdf", pick.seller.name, pick.date);
 
     let config = aws_config::load_from_env().await;
     let client = aws_sdk_s3::Client::new(&config);
@@ -417,7 +534,7 @@ pub async fn create_pick_s3(pick: &Pick) -> Result<S3Object, Box<dyn std::error:
     match upload_object(&client, bytes, bucket_name, &key).await {
         Ok(_) => {}
         Err(e) => {
-            panic!("Error: {}", e);
+            panic!("Error uploading to S3: {}", e);
         }
     }
     Ok(S3Object::new(key, bucket_name.to_string()))

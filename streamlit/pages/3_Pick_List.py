@@ -80,7 +80,8 @@ if st.button("Generate Pick Lists"):
             )
 
         pick_lists = create_pick_lists(
-            market_place_import.market_place, date, week_number)
+            market_place_import.market_place, date, week_number, True
+        )
 
         pick_lists_json_export = generate_pick_list_json(pick_lists)
 
